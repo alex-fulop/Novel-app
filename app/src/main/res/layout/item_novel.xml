@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/novelLayout">
+
+    <TextView
+        android:id="@+id/novelUsername"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/grid_2x"
+        android:text="Username"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/novelText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/grid_2x"
+        android:text="Novel text"
+        android:textSize="@dimen/standard_text_size"
+        app:layout_constraintTop_toBottomOf="@+id/novelUsername" />
+
+    <ImageView
+        android:id="@+id/novelImage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/grid_2x"
+        android:adjustViewBounds="true"
+        android:scaleType="centerInside"
+        app:layout_constraintTop_toBottomOf="@id/novelText" />
+
+    <TextView
+        android:id="@+id/novelDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/grid_2x"
+        android:text="Date"
+        app:layout_constraintTop_toBottomOf="@+id/novelImage" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/grid_2x"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@+id/novelDate">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/novelLike"
+                android:layout_width="@dimen/small_image_dimension"
+                android:layout_height="@dimen/small_image_dimension"
+                android:background="@null"
+                android:padding="@dimen/grid_1x"
+                android:scaleType="centerInside"
+                android:src="@drawable/heart" />
+
+            <TextView
+                android:id="@+id/novelLikeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:paddingStart="@dimen/grid_2x"
+                android:text="0"
+                android:textSize="@dimen/standard_text_size" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/novelShare"
+                android:layout_width="@dimen/small_image_dimension"
+                android:layout_height="@dimen/small_image_dimension"
+                android:background="@null"
+                android:padding="@dimen/grid_1x"
+                android:scaleType="centerInside"
+                android:src="@drawable/share" />
+
+            <TextView
+                android:id="@+id/novelShareCount"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:paddingStart="@dimen/grid_2x"
+                android:text="0"
+                android:textSize="@dimen/standard_text_size" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

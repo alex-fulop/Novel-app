@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "779820118182",
+    "project_id": "novel-cab4c",
+    "storage_bucket": "novel-cab4c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:779820118182:android:ebc04e6fbb1724a65c4467",
+        "android_client_info": {
+          "package_name": "com.fulop.novel_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "779820118182-ht9fj97mnvg9uqlibrs4mbm6ief015d4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAR5NiPHg07KsP3M25WSyL1DAD8XXcWFGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "779820118182-ht9fj97mnvg9uqlibrs4mbm6ief015d4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

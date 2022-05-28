@@ -21,4 +21,6 @@
     <string name="desc_floating_action_btn">Compose a new Novel</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="my_activity_title">My Activity</string>
+    <string name="home_title">Home</string>
 </resources>

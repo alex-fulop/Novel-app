@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.fulop.novel_v2.R;
 import com.fulop.novel_v2.models.User;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -86,22 +87,11 @@ public class ProfileActivity extends AppCompatActivity {
         filePath.putFile(imageUri).addOnSuccessListener(taskSnapshot -> {
             filePath.getDownloadUrl()
                     .addOnSuccessListener(uri -> {
-                        String url = uri.toString();
-                        firebaseDB.collection(DATA_USERS)
-                                .document(userId)
-                                .update(DATA_USER_IMAGE_URL, url)
-                                .addOnSuccessListener(unused -> {
-                                    imageUrl = url;
-                                    loadUrl(url, profilePicture, R.drawable.novel_logo);
-                                });
+                        updateUserProfilePicture(uri);
                         profileProgressLayout.setVisibility(View.GONE);
                     })
-                    .addOnFailureListener(e -> {
-                        onUploadFailure();
-                    });
-        }).addOnFailureListener(e -> {
-            onUploadFailure();
-        });
+                    .addOnFailureListener(e -> onUploadFailure());
+        }).addOnFailureListener(e -> onUploadFailure());
     }
 
     private void onUploadFailure() {
@@ -112,22 +102,37 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void populateInfo() {
         profileProgressLayout.setVisibility(View.VISIBLE);
-        firebaseDB.collection(DATA_USERS).document(userId).get()
+        firebaseDB.collection(DATA_USERS)
+                .document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    User user = documentSnapshot.toObject(User.class);
-                    if (user != null) {
-                        usernameEditText.setText(user.getUsername(), TextView.BufferType.EDITABLE);
-                        emailEditText.setText(user.getEmail(), TextView.BufferType.EDITABLE);
-                        imageUrl = user.getImageUrl();
-                        if (imageUrl != null) {
-                            loadUrl(user.getImageUrl(), profilePicture, R.drawable.novel_logo);
-                        }
-                    }
+                    populateProfileWithUserInfo(documentSnapshot);
                     profileProgressLayout.setVisibility(View.GONE);
                 }).addOnFailureListener(e -> {
             e.printStackTrace();
             finish();
         });
+    }
+
+    private void populateProfileWithUserInfo(DocumentSnapshot doc) {
+        User user = doc.toObject(User.class);
+        if (user != null) {
+            usernameEditText.setText(user.getUsername(), TextView.BufferType.EDITABLE);
+            emailEditText.setText(user.getEmail(), TextView.BufferType.EDITABLE);
+            imageUrl = user.getImageUrl();
+            if (imageUrl != null)
+                loadUrl(user.getImageUrl(), profilePicture, R.drawable.novel_logo);
+        }
+    }
+
+    private void updateUserProfilePicture(Uri uri) {
+        String url = uri.toString();
+        firebaseDB.collection(DATA_USERS)
+                .document(userId)
+                .update(DATA_USER_IMAGE_URL, url)
+                .addOnSuccessListener(unused -> {
+                    imageUrl = url;
+                    loadUrl(url, profilePicture, R.drawable.novel_logo);
+                });
     }
 
     public void onApply(View view) {
@@ -138,7 +143,8 @@ public class ProfileActivity extends AppCompatActivity {
         map.put(DATA_USER_USERNAME, username);
         map.put(DATA_USER_EMAIL, email);
 
-        firebaseDB.collection(DATA_USERS).document(userId).update(map)
+        firebaseDB.collection(DATA_USERS)
+                .document(userId).update(map)
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "Update Successful", Toast.LENGTH_SHORT).show();
                     finish();

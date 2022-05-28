@@ -3,6 +3,7 @@ package com.fulop.novel_v2.activities;
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Utils.loadUrl;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -38,7 +39,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 public class HomeActivity extends AppCompatActivity implements HomeCallback {
 
-    private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
 
     private final HomeFragment homeFragment = new HomeFragment();
@@ -51,84 +51,43 @@ public class HomeActivity extends AppCompatActivity implements HomeCallback {
     private EditText search;
     private TextView titleBar;
     private CardView searchBar;
+    private ViewPager2 viewPagerContainer;
+    private TabLayout tabLayout;
 
     private final String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     private NovelFragment currentFragment = homeFragment;
     private User currentUser;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-
-        ViewPager2 viewPagerContainer = findViewById(R.id.viewPagerContainer);
-        TabLayout tabLayout = findViewById(R.id.tabs);
-        homeProgressLayout = findViewById(R.id.homeProgressLayout);
-        profilePicture = findViewById(R.id.profilePicture);
-        actionButton = findViewById(R.id.floatingActionButton);
-        search = findViewById(R.id.search);
-        titleBar = findViewById(R.id.titleBar);
-        searchBar = findViewById(R.id.searchBar);
-
-        SectionPagerAdapter sectionPagerAdapter = new SectionPagerAdapter(getSupportFragmentManager(), getLifecycle());
-        viewPagerContainer.setAdapter(sectionPagerAdapter);
-
-        new TabLayoutMediator(tabLayout, viewPagerContainer,
-                (tab, position) -> {
-                    if (position == 0)
-                        tab.setIcon(AppCompatResources.getDrawable(this, R.drawable.selector_home));
-                    else if (position == 1)
-                        tab.setIcon(AppCompatResources.getDrawable(this, R.drawable.selector_search));
-                    else
-                        tab.setIcon(AppCompatResources.getDrawable(this, R.drawable.selector_myactivity));
-                }
-        ).attach();
+        initLayoutComponents();
+        getTabMediator().attach();
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                if (tab.getPosition() == 0) {
-                    titleBar.setVisibility(View.VISIBLE);
-                    titleBar.setText("Home");
-                    searchBar.setVisibility(View.GONE);
-                    currentFragment = homeFragment;
-                } else if (tab.getPosition() == 1) {
-                    titleBar.setVisibility(View.GONE);
-                    searchBar.setVisibility(View.VISIBLE);
-                    currentFragment = searchFragment;
-                } else {
-                    titleBar.setVisibility(View.VISIBLE);
-                    titleBar.setText("My Activity");
-                    searchBar.setVisibility(View.GONE);
-                    currentFragment = myActivityFragment;
-                }
+                switchFragmentsOnTabSelected(tab);
             }
 
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
-
             }
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-
             }
         });
 
-        profilePicture.setOnClickListener(view -> {
-            startActivity(ProfileActivity.newIntent(this));
-        });
-
-        actionButton.setOnClickListener(v -> {
-            startActivity(NovelActivity.newIntent(this, userId, currentUser.getUsername()));
-        });
-
+        goToProfileOnProfilePicClick();
+        composeANewNovelOnBtnClick();
         homeProgressLayout.setOnTouchListener((v, event) -> true);
 
         search.setOnEditorActionListener((view, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_SEARCH) {
+            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_SEARCH)
                 searchFragment.newHashtag(view.getText().toString());
-            }
             return true;
         });
     }
@@ -140,9 +99,7 @@ public class HomeActivity extends AppCompatActivity implements HomeCallback {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             startActivity(LoginActivity.newIntent(this));
             finish();
-        } else {
-            populate();
-        }
+        } else populate();
     }
 
     @Override
@@ -180,6 +137,64 @@ public class HomeActivity extends AppCompatActivity implements HomeCallback {
         searchFragment.setUser(currentUser);
         myActivityFragment.setUser(currentUser);
         currentFragment.updateList();
+    }
+
+    @NonNull
+    private TabLayoutMediator getTabMediator() {
+        return new TabLayoutMediator(tabLayout, viewPagerContainer,
+                (tab, position) -> {
+                    if (position == 0)
+                        tab.setIcon(AppCompatResources.getDrawable(this, R.drawable.selector_home));
+                    else if (position == 1)
+                        tab.setIcon(AppCompatResources.getDrawable(this, R.drawable.selector_search));
+                    else
+                        tab.setIcon(AppCompatResources.getDrawable(this, R.drawable.selector_myactivity));
+                }
+        );
+    }
+
+    private void initLayoutComponents() {
+        viewPagerContainer = findViewById(R.id.viewPagerContainer);
+        tabLayout = findViewById(R.id.tabs);
+        homeProgressLayout = findViewById(R.id.homeProgressLayout);
+        profilePicture = findViewById(R.id.profilePicture);
+        actionButton = findViewById(R.id.floatingActionButton);
+        search = findViewById(R.id.search);
+        titleBar = findViewById(R.id.titleBar);
+        searchBar = findViewById(R.id.searchBar);
+
+        SectionPagerAdapter sectionPagerAdapter = new SectionPagerAdapter(getSupportFragmentManager(), getLifecycle());
+        viewPagerContainer.setAdapter(sectionPagerAdapter);
+    }
+
+    private void switchFragmentsOnTabSelected(TabLayout.Tab tab) {
+        if (tab.getPosition() == 0) {
+            titleBar.setVisibility(View.VISIBLE);
+            titleBar.setText(R.string.home_title);
+            searchBar.setVisibility(View.GONE);
+            currentFragment = homeFragment;
+        } else if (tab.getPosition() == 1) {
+            titleBar.setVisibility(View.GONE);
+            searchBar.setVisibility(View.VISIBLE);
+            currentFragment = searchFragment;
+        } else {
+            titleBar.setVisibility(View.VISIBLE);
+            titleBar.setText(R.string.my_activity_title);
+            searchBar.setVisibility(View.GONE);
+            currentFragment = myActivityFragment;
+        }
+    }
+
+    private void goToProfileOnProfilePicClick() {
+        profilePicture.setOnClickListener(view -> {
+            startActivity(ProfileActivity.newIntent(this));
+        });
+    }
+
+    private void composeANewNovelOnBtnClick() {
+        actionButton.setOnClickListener(v -> {
+            startActivity(NovelActivity.newIntent(this, userId, currentUser.getUsername()));
+        });
     }
 
     private class SectionPagerAdapter extends FragmentStateAdapter {

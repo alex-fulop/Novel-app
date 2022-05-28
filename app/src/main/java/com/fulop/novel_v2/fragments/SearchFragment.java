@@ -14,12 +14,8 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.adapters.NovelListAdapter;
 import com.fulop.novel_v2.listeners.NovelListenerImpl;
 import com.fulop.novel_v2.models.Novel;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -35,16 +31,13 @@ public class SearchFragment extends NovelFragment {
 
     private String currentHashtag;
     private ImageView followHashtag;
-    private SwipeRefreshLayout swipeRefreshLayout;
     private boolean hashtagIsFollowed;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_search, container, false);
-        followHashtag = view.findViewById(R.id.followHashtag);
-        novelList = view.findViewById(R.id.novelList);
-        swipeRefreshLayout = view.findViewById(R.id.swipeRefresh);
+        initFragmentComponents(view);
         return view;
     }
 
@@ -53,17 +46,6 @@ public class SearchFragment extends NovelFragment {
         super.onViewCreated(view, savedInstanceState);
 
         listener = new NovelListenerImpl(novelList, currentUser, callback);
-
-        novelListAdapter = new NovelListAdapter(userId, new ArrayList<>());
-        novelListAdapter.setListener(listener);
-        novelList.setLayoutManager(new LinearLayoutManager(getContext()));
-        novelList.setAdapter(novelListAdapter);
-        novelList.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
-
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            swipeRefreshLayout.setRefreshing(false);
-            updateList();
-        });
 
         followHashtag.setOnClickListener(v -> {
             followHashtag.setClickable(false);
@@ -125,5 +107,12 @@ public class SearchFragment extends NovelFragment {
                 })
                 .addOnFailureListener(Throwable::printStackTrace);
         updateFollowDrawable();
+    }
+
+    protected void initFragmentComponents(View view) {
+        followHashtag = view.findViewById(R.id.followHashtag);
+        novelList = view.findViewById(R.id.novelList);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefresh);
+        super.initFragmentComponents();
     }
 }

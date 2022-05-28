@@ -1,16 +1,8 @@
 package com.fulop.novel_v2.activities;
 
-import static com.fulop.novel_v2.Util.Constants.DATA_NOVELS;
-import static com.fulop.novel_v2.Util.Constants.DATA_PICTURE;
-import static com.fulop.novel_v2.Util.Constants.DATA_USERS;
-import static com.fulop.novel_v2.Util.Constants.DATA_USER_IMAGE_URL;
-import static com.fulop.novel_v2.Utils.*;
-import static com.fulop.novel_v2.Utils.loadUrl;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
+import static com.fulop.novel_v2.util.Constants.DATA_PICTURE;
+import static com.fulop.novel_v2.util.Utils.loadUrl;
 
 import android.app.Activity;
 import android.content.Context;
@@ -23,11 +15,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.Utils;
 import com.fulop.novel_v2.models.Novel;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
@@ -35,7 +28,6 @@ import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class NovelActivity extends AppCompatActivity {

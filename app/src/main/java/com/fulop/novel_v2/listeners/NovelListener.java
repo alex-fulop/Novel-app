@@ -1,4 +1,4 @@
-package com.fulop.novel_v2.Listeners;
+package com.fulop.novel_v2.listeners;
 
 import com.fulop.novel_v2.models.Novel;
 

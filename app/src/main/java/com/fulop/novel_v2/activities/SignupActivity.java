@@ -1,9 +1,7 @@
 package com.fulop.novel_v2.activities;
 
-import static com.fulop.novel_v2.Util.Constants.DATA_USERS;
+import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static java.util.Objects.requireNonNull;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +12,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.fulop.novel_v2.R;
 import com.fulop.novel_v2.models.User;

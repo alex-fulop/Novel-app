@@ -1,4 +1,4 @@
-package com.fulop.novel_v2.Util;
+package com.fulop.novel_v2.util;
 
 public class Constants {
 

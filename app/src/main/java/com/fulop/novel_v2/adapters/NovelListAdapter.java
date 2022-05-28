@@ -1,8 +1,8 @@
 package com.fulop.novel_v2.adapters;
 
-import static com.fulop.novel_v2.Utils.*;
+import static com.fulop.novel_v2.util.Utils.getDate;
+import static com.fulop.novel_v2.util.Utils.loadUrl;
 
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,9 +13,8 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.fulop.novel_v2.Listeners.NovelListener;
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.Utils;
+import com.fulop.novel_v2.listeners.NovelListener;
 import com.fulop.novel_v2.models.Novel;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.fulop.novel_v2;
+package com.fulop.novel_v2.util;
 
 import android.content.Context;
 import android.widget.ImageView;
@@ -7,28 +7,12 @@ import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.fulop.novel_v2.R;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 
-import io.reactivex.rxjava3.core.Observable;
-
 public class Utils {
-    public static Observable<Document> getJsoupContent(String url) {
-        return Observable.fromCallable(() -> {
-            try {
-                Document document = Jsoup.connect(url).timeout(0).get();
-                return document;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
     public static void loadUrl(String url, ImageView view, int errorDrawable) {
         if (view.getContext() != null) {
             RequestOptions options = RequestOptions

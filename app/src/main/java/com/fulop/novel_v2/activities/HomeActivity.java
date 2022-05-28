@@ -1,17 +1,7 @@
 package com.fulop.novel_v2.activities;
 
-import static com.fulop.novel_v2.Util.Constants.DATA_USERS;
-import static com.fulop.novel_v2.Utils.*;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
-import androidx.cardview.widget.CardView;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.lifecycle.Lifecycle;
-import androidx.viewpager2.adapter.FragmentStateAdapter;
-import androidx.viewpager2.widget.ViewPager2;
+import static com.fulop.novel_v2.util.Constants.DATA_USERS;
+import static com.fulop.novel_v2.util.Utils.loadUrl;
 
 import android.content.Context;
 import android.content.Intent;
@@ -23,22 +13,30 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
+import androidx.cardview.widget.CardView;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.Lifecycle;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
+
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.Utils;
 import com.fulop.novel_v2.fragments.HomeFragment;
 import com.fulop.novel_v2.fragments.MyActivityFragment;
+import com.fulop.novel_v2.fragments.NovelFragment;
 import com.fulop.novel_v2.fragments.SearchFragment;
+import com.fulop.novel_v2.listeners.HomeCallback;
 import com.fulop.novel_v2.models.User;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity implements HomeCallback {
 
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
@@ -55,7 +53,8 @@ public class HomeActivity extends AppCompatActivity {
     private CardView searchBar;
 
     private final String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-    private User user;
+    private NovelFragment currentFragment = homeFragment;
+    private User currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,13 +91,16 @@ public class HomeActivity extends AppCompatActivity {
                     titleBar.setVisibility(View.VISIBLE);
                     titleBar.setText("Home");
                     searchBar.setVisibility(View.GONE);
+                    currentFragment = homeFragment;
                 } else if (tab.getPosition() == 1) {
                     titleBar.setVisibility(View.GONE);
                     searchBar.setVisibility(View.VISIBLE);
+                    currentFragment = searchFragment;
                 } else {
                     titleBar.setVisibility(View.VISIBLE);
                     titleBar.setText("My Activity");
                     searchBar.setVisibility(View.GONE);
+                    currentFragment = myActivityFragment;
                 }
             }
 
@@ -118,7 +120,7 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         actionButton.setOnClickListener(v -> {
-            startActivity(NovelActivity.newIntent(this, userId, user.getUsername()));
+            startActivity(NovelActivity.newIntent(this, userId, currentUser.getUsername()));
         });
 
         homeProgressLayout.setOnTouchListener((v, event) -> true);
@@ -143,19 +145,41 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onUserUpdated() {
+        populate();
+    }
+
+    @Override
+    public void onRefresh() {
+        currentFragment.updateList();
+    }
+
     private void populate() {
         homeProgressLayout.setVisibility(View.VISIBLE);
         firebaseDB.collection(DATA_USERS).document(userId).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     homeProgressLayout.setVisibility(View.GONE);
-                    user = documentSnapshot.toObject(User.class);
-                    if (user != null && user.getImageUrl() != null) {
-                        loadUrl(user.getImageUrl(), profilePicture, R.drawable.novel_logo);
-                    }
+                    currentUser = documentSnapshot.toObject(User.class);
+                    loadProfilePicture();
+                    updateFragmentUser();
                 }).addOnFailureListener(e -> {
             e.printStackTrace();
             finish();
         });
+    }
+
+    private void loadProfilePicture() {
+        if (currentUser != null && currentUser.getImageUrl() != null) {
+            loadUrl(currentUser.getImageUrl(), profilePicture, R.drawable.novel_logo);
+        }
+    }
+
+    private void updateFragmentUser() {
+        homeFragment.setUser(currentUser);
+        searchFragment.setUser(currentUser);
+        myActivityFragment.setUser(currentUser);
+        currentFragment.updateList();
     }
 
     private class SectionPagerAdapter extends FragmentStateAdapter {

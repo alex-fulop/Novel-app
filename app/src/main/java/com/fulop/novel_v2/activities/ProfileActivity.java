@@ -1,18 +1,11 @@
 package com.fulop.novel_v2.activities;
 
-import static com.fulop.novel_v2.Util.Constants.DATA_PICTURE;
-import static com.fulop.novel_v2.Util.Constants.DATA_USERS;
-import static com.fulop.novel_v2.Util.Constants.DATA_USER_EMAIL;
-import static com.fulop.novel_v2.Util.Constants.DATA_USER_IMAGE_URL;
-import static com.fulop.novel_v2.Util.Constants.DATA_USER_USERNAME;
-import static com.fulop.novel_v2.Utils.*;
-
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import static com.fulop.novel_v2.util.Constants.DATA_PICTURE;
+import static com.fulop.novel_v2.util.Constants.DATA_USERS;
+import static com.fulop.novel_v2.util.Constants.DATA_USER_EMAIL;
+import static com.fulop.novel_v2.util.Constants.DATA_USER_IMAGE_URL;
+import static com.fulop.novel_v2.util.Constants.DATA_USER_USERNAME;
+import static com.fulop.novel_v2.util.Utils.loadUrl;
 
 import android.app.Activity;
 import android.content.Context;
@@ -26,17 +19,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.Utils;
 import com.fulop.novel_v2.models.User;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-import com.google.protobuf.Any;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -24,7 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.models.User;
+import com.fulop.novel_v2.models.NovelUser;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -114,7 +114,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void populateProfileWithUserInfo(DocumentSnapshot doc) {
-        User user = doc.toObject(User.class);
+        NovelUser user = doc.toObject(NovelUser.class);
         if (user != null) {
             usernameEditText.setText(user.getUsername(), TextView.BufferType.EDITABLE);
             emailEditText.setText(user.getEmail(), TextView.BufferType.EDITABLE);

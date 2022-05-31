@@ -16,10 +16,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.fulop.novel_v2.R;
-import com.fulop.novel_v2.models.User;
+import com.fulop.novel_v2.models.NovelUser;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class SignupActivity extends AppCompatActivity {
@@ -30,13 +29,13 @@ public class SignupActivity extends AppCompatActivity {
 
     private final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-    private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
-        FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user != null) {
-            startActivity(HomeActivity.newIntent(SignupActivity.this));
-            finish();
-        }
-    };
+//    private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
+//        FirebaseUser user = firebaseAuth.getCurrentUser();
+//        if (user != null) {
+//            startActivity(MainActivity.newIntent(SignupActivity.this));
+//            finish();
+//        }
+//    };
 
     private EditText emailEditText;
     private EditText passwordEditText;
@@ -131,7 +130,7 @@ public class SignupActivity extends AppCompatActivity {
                                     requireNonNull(task.getException()).getLocalizedMessage());
                             Toast.makeText(this, error, Toast.LENGTH_LONG).show();
                         } else {
-                            User user = new User();
+                            NovelUser user = new NovelUser();
                             user.setUsername(username);
                             user.setEmail(email);
                             firebaseDB.collection(DATA_USERS).document(firebaseAuth.getUid()).set(user);

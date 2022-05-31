@@ -30,14 +30,14 @@ import com.fulop.novel_v2.fragments.MyActivityFragment;
 import com.fulop.novel_v2.fragments.NovelFragment;
 import com.fulop.novel_v2.fragments.SearchFragment;
 import com.fulop.novel_v2.listeners.HomeCallback;
-import com.fulop.novel_v2.models.User;
+import com.fulop.novel_v2.models.NovelUser;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-public class HomeActivity extends AppCompatActivity implements HomeCallback {
+public class MainActivity extends AppCompatActivity implements HomeCallback {
 
     private final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
 
@@ -56,7 +56,31 @@ public class HomeActivity extends AppCompatActivity implements HomeCallback {
 
     private final String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     private NovelFragment currentFragment = homeFragment;
-    private User currentUser;
+    private NovelUser currentUser;
+
+    public static Intent newIntent(Context context) {
+        return new Intent(context, MainActivity.class);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            startActivity(LoginActivity.newIntent(this));
+            finish();
+        } else populate();
+    }
+
+    @Override
+    public void onUserUpdated() {
+        populate();
+    }
+
+    @Override
+    public void onRefresh() {
+        currentFragment.updateList();
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -87,42 +111,8 @@ public class HomeActivity extends AppCompatActivity implements HomeCallback {
 
         search.setOnEditorActionListener((view, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_SEARCH)
-                searchFragment.newHashtag(view.getText().toString());
+                searchFragment.searchByHashtag(view.getText().toString());
             return true;
-        });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
-            startActivity(LoginActivity.newIntent(this));
-            finish();
-        } else populate();
-    }
-
-    @Override
-    public void onUserUpdated() {
-        populate();
-    }
-
-    @Override
-    public void onRefresh() {
-        currentFragment.updateList();
-    }
-
-    private void populate() {
-        homeProgressLayout.setVisibility(View.VISIBLE);
-        firebaseDB.collection(DATA_USERS).document(userId).get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    homeProgressLayout.setVisibility(View.GONE);
-                    currentUser = documentSnapshot.toObject(User.class);
-                    loadProfilePicture();
-                    updateFragmentUser();
-                }).addOnFailureListener(e -> {
-            e.printStackTrace();
-            finish();
         });
     }
 
@@ -217,7 +207,17 @@ public class HomeActivity extends AppCompatActivity implements HomeCallback {
         }
     }
 
-    public static Intent newIntent(Context context) {
-        return new Intent(context, HomeActivity.class);
+    private void populate() {
+        homeProgressLayout.setVisibility(View.VISIBLE);
+        firebaseDB.collection(DATA_USERS).document(userId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    homeProgressLayout.setVisibility(View.GONE);
+                    currentUser = documentSnapshot.toObject(NovelUser.class);
+                    loadProfilePicture();
+                    updateFragmentUser();
+                }).addOnFailureListener(e -> {
+            e.printStackTrace();
+            finish();
+        });
     }
 }

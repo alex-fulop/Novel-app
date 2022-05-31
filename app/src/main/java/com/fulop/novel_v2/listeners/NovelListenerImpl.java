@@ -12,7 +12,7 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.fulop.novel_v2.models.Novel;
-import com.fulop.novel_v2.models.User;
+import com.fulop.novel_v2.models.NovelUser;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -26,10 +26,10 @@ public class NovelListenerImpl implements NovelListener {
 
 
     private RecyclerView novelList;
-    private User user;
+    private NovelUser user;
     private HomeCallback callback;
 
-    public NovelListenerImpl(RecyclerView novelList, User user, HomeCallback callback) {
+    public NovelListenerImpl(RecyclerView novelList, NovelUser user, HomeCallback callback) {
         this.novelList = novelList;
         this.user = user;
         this.callback = callback;
@@ -127,11 +127,11 @@ public class NovelListenerImpl implements NovelListener {
         this.novelList = novelList;
     }
 
-    public User getUser() {
+    public NovelUser getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(NovelUser user) {
         this.user = user;
     }
 

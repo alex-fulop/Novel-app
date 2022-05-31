@@ -2,7 +2,7 @@ package com.fulop.novel_v2.models;
 
 import java.util.List;
 
-public class User {
+public class NovelUser {
     private String username;
     private String email;
     private String imageUrl;

@@ -12,7 +12,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.fulop.novel_v2.adapters.NovelListAdapter;
 import com.fulop.novel_v2.listeners.HomeCallback;
 import com.fulop.novel_v2.listeners.NovelListenerImpl;
-import com.fulop.novel_v2.models.User;
+import com.fulop.novel_v2.models.NovelUser;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -22,7 +22,7 @@ public abstract class NovelFragment extends Fragment {
     protected final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
     protected final String userId = FirebaseAuth.getInstance().getUid();
 
-    protected User currentUser;
+    protected NovelUser currentUser;
     protected NovelListAdapter novelListAdapter;
     protected NovelListenerImpl listener;
     protected HomeCallback callback;
@@ -57,7 +57,7 @@ public abstract class NovelFragment extends Fragment {
 
     public abstract void updateList();
 
-    public void setUser(User user) {
+    public void setUser(NovelUser user) {
         this.currentUser = user;
         if (listener != null) listener.setUser(user);
     }

@@ -4,7 +4,6 @@ import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_HASHTAGS;
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_HASHTAGS;
-import static com.google.firebase.auth.UserRecord.CreateRequest;
 import static io.github.redouane59.twitter.dto.tweet.TweetV2.TweetData;
 
 import android.os.Bundle;
@@ -12,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,8 +22,7 @@ import com.fulop.novel_v2.api.TweetsAsyncApiCall;
 import com.fulop.novel_v2.api.UsersAsyncApiCall;
 import com.fulop.novel_v2.models.Novel;
 import com.fulop.novel_v2.models.NovelUser;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -41,9 +40,10 @@ public class SearchFragment extends NovelFragment {
 
     private final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
     private ImageView followHashtag;
+    private LinearLayout searchProgressLayout;
     private boolean hashtagIsFollowed;
-    private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private String searchTerm;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -69,27 +69,40 @@ public class SearchFragment extends NovelFragment {
             currentUser.setFollowHashtags(new ArrayList<>());
 
         novelList.setVisibility(View.GONE);
+        searchProgressLayout.setVisibility(View.VISIBLE);
 
         if (searchTerm != null) {
-            List<TweetData> tweets = getTweetsForSearchTerm();
-            tweets.forEach(this::createNovelUserForTweetIfNotPresent);
-            tweets.forEach(this::createNovelFromTweet);
-
-            firebaseDB.collection(DATA_NOVELS)
-                    .whereArrayContains(DATA_NOVEL_HASHTAGS, searchTerm).get()
-                    .addOnSuccessListener(list -> {
-                        novelList.setVisibility(View.VISIBLE);
-                        List<Novel> novels = new ArrayList<>();
-                        for (DocumentSnapshot document : list.getDocuments()) {
-                            Novel novel = document.toObject(Novel.class);
-                            if (novel != null) novels.add(novel);
-                        }
-                        Collections.reverse(novels);
-                        novelListAdapter.updateNovels(novels);
-                    })
-                    .addOnFailureListener(Throwable::printStackTrace);
-            updateFollowDrawable();
+            queryTwitterForTweets();
+            refreshList();
         }
+
+        searchProgressLayout.setVisibility(View.GONE);
+    }
+
+    private void queryTwitterForTweets() {
+        List<TweetData> tweets = getTweetsForSearchTerm();
+        if (tweets != null) {
+            tweets.forEach(this::createNovelUserForTweetIfNotPresent);
+            tweets.forEach(this::createNovelFromTweetIfNotPresent);
+        }
+    }
+
+    @Override
+    public void refreshList() {
+        firebaseDB.collection(DATA_NOVELS)
+                .whereArrayContains(DATA_NOVEL_HASHTAGS, searchTerm).get()
+                .addOnSuccessListener(list -> {
+                    novelList.setVisibility(View.VISIBLE);
+                    List<Novel> novels = new ArrayList<>();
+                    for (DocumentSnapshot document : list.getDocuments()) {
+                        Novel novel = document.toObject(Novel.class);
+                        if (novel != null) novels.add(novel);
+                    }
+                    Collections.reverse(novels);
+                    novelListAdapter.updateNovels(novels);
+                })
+                .addOnFailureListener(Throwable::printStackTrace);
+        updateFollowDrawable();
     }
 
     public void searchByHashtag(String term) {
@@ -103,7 +116,15 @@ public class SearchFragment extends NovelFragment {
         firebaseDB.collection(DATA_USERS).document(user.getId()).get()
                 .addOnSuccessListener(documentSnapshot -> {
                     NovelUser existingUser = documentSnapshot.toObject(NovelUser.class);
-                    if (existingUser == null) createNewNovelUserFromTwitterUser(user);
+                    if (existingUser == null) createUserFromTweet(user);
+                });
+    }
+
+    private void createNovelFromTweetIfNotPresent(TweetData tweet) {
+        firebaseDB.collection(DATA_NOVELS).document(tweet.getId()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    Novel existingNovel = documentSnapshot.toObject(Novel.class);
+                    if (existingNovel == null) createNovelFromTweet(tweet);
                 });
     }
 
@@ -121,31 +142,14 @@ public class SearchFragment extends NovelFragment {
         return call.getResult().getData();
     }
 
-//    private void createUserFromTwitterWithEmailAndPassword(User user) {
-//        firebaseAuth.createUser(new UserRecord.CreateRequest().setEmail())
-//        firebaseAuth.createUser(user.getName() + "@novel.com", user.getName())
-//                .addOnCompleteListener(task -> {
-//                    if (!task.isSuccessful()) {
-//                        String error = String.format("User fetch error: %s", requireNonNull(task.getException()).getLocalizedMessage());
-//                        Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
-//                    } else createNewNovelUserFromTwitterUser(user);
-//                }).addOnFailureListener(Throwable::printStackTrace);
-//    }
-
-    private void createNewNovelUserFromTwitterUser(User user) {
-        CreateRequest request = new CreateRequest()
-                .setDisplayName(user.getDisplayedName())
-                .setEmail(user.getName() + "@novel.com")
-                .setEmailVerified(false)
-                .setPassword("secret")
-                .setPhotoUrl(user.getProfileImageUrl())
-                .setDisabled(false);
-
-        try {
-            firebaseAuth.createUser(request);
-        } catch (FirebaseAuthException e) {
-            e.printStackTrace();
-        }
+    private void createUserFromTweet(User user) {
+        NovelUser novelUser = new NovelUser();
+        novelUser.setUsername(user.getDisplayedName());
+        novelUser.setEmail(user.getName() + "@novel.com");
+        novelUser.setImageUrl(user.getProfileImageUrl());
+        novelUser.setFollowUsers(new ArrayList<>());
+        novelUser.setFollowHashtags(new ArrayList<>());
+        firebaseDB.collection(DATA_USERS).document(user.getId()).set(novelUser);
     }
 
     private User getTweetUser(TweetData tweet) {
@@ -163,12 +167,19 @@ public class SearchFragment extends NovelFragment {
     }
 
     private void createNovelFromTweet(TweetData tweet) {
+        DocumentReference novelreference = firebaseDB.collection(DATA_NOVELS).document(tweet.getId());
+
         Novel novel = new Novel();
-        novel.setNovelId(tweet.getId());
+        novel.setNovelId(novelreference.getId());
         novel.setText(tweet.getText());
+        novel.setUsername(tweet.getUser().getName());
         novel.setUserIds(Arrays.asList(tweet.getAuthorId()));
-        novel.setHashtags(Arrays.asList(tweet.getAuthorId()));
-        firebaseDB.collection(DATA_NOVELS).document().set(novel);
+        novel.setHashtags(Arrays.asList(searchTerm));
+        novel.setLikes(new ArrayList<>());
+        novel.setTimestamp(System.currentTimeMillis());
+        if (tweet.getAttachments() != null)
+            novel.setImageUrl(tweet.getAttachments().getMediaKeys()[0]);
+        novelreference.set(novel);
     }
 
     private void followOrUnfollowClickedHashtag() {
@@ -205,6 +216,8 @@ public class SearchFragment extends NovelFragment {
         followHashtag = view.findViewById(R.id.followHashtag);
         novelList = view.findViewById(R.id.novelList);
         swipeRefreshLayout = view.findViewById(R.id.swipeRefresh);
+        searchProgressLayout = view.findViewById(R.id.searchProgressLayout);
+        searchProgressLayout.setOnTouchListener((v, event) -> true);
         super.initFragmentComponents();
     }
 }

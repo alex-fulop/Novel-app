@@ -57,8 +57,11 @@ public abstract class NovelFragment extends Fragment {
 
     public abstract void updateList();
 
+    public abstract void refreshList();
+
     public void setUser(NovelUser user) {
         this.currentUser = user;
         if (listener != null) listener.setUser(user);
     }
+
 }

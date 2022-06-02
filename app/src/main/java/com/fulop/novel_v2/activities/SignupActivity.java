@@ -19,6 +19,7 @@ import com.fulop.novel_v2.R;
 import com.fulop.novel_v2.models.NovelUser;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class SignupActivity extends AppCompatActivity {
@@ -29,13 +30,13 @@ public class SignupActivity extends AppCompatActivity {
 
     private final FirebaseFirestore firebaseDB = FirebaseFirestore.getInstance();
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-//    private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
-//        FirebaseUser user = firebaseAuth.getCurrentUser();
-//        if (user != null) {
-//            startActivity(MainActivity.newIntent(SignupActivity.this));
-//            finish();
-//        }
-//    };
+    private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            startActivity(MainActivity.newIntent(SignupActivity.this));
+            finish();
+        }
+    };
 
     private EditText emailEditText;
     private EditText passwordEditText;

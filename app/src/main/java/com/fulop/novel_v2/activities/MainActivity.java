@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements HomeCallback {
 
     @Override
     public void onRefresh() {
-        currentFragment.updateList();
+        currentFragment.refreshList();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements HomeCallback {
         homeFragment.setUser(currentUser);
         searchFragment.setUser(currentUser);
         myActivityFragment.setUser(currentUser);
-        currentFragment.updateList();
+        currentFragment.refreshList();
     }
 
     @NonNull

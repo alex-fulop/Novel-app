@@ -45,12 +45,15 @@ public class MyActivityFragment extends NovelFragment {
                             .sorted(Novel::compareTo)
                             .collect(Collectors.toList());
                     novelListAdapter.updateNovels(sortedNovels);
-                    novelList.setVisibility(View.VISIBLE);
                 })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                    novelList.setVisibility(View.VISIBLE);
-                });
+                .addOnFailureListener(Throwable::printStackTrace);
+        novelList.setVisibility(View.VISIBLE);
+
+    }
+
+    @Override
+    public void refreshList() {
+        updateList();
     }
 
     protected void initFragmentComponents(View view) {

@@ -4,6 +4,7 @@ import static com.fulop.novel_v2.util.Constants.ACCESS_TOKEN;
 import static com.fulop.novel_v2.util.Constants.ACCESS_TOKEN_SECRET;
 import static com.fulop.novel_v2.util.Constants.CONSUMER_KEY;
 import static com.fulop.novel_v2.util.Constants.CONSUMER_SECRET;
+import static com.fulop.novel_v2.util.Constants.NEWS_QUERY;
 
 import io.github.redouane59.twitter.TwitterClient;
 import io.github.redouane59.twitter.dto.endpoints.AdditionalParameters;
@@ -28,7 +29,8 @@ public class TweetsAsyncApiCall implements Runnable {
                 .build());
 
         try {
-            result = twitterClient.searchTweets(term + " lang:en", AdditionalParameters.builder()
+            String query = term + NEWS_QUERY;
+            result = twitterClient.searchTweets(query, AdditionalParameters.builder()
                     .recursiveCall(false)
                     .maxResults(10)
                     .build());

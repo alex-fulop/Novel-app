@@ -2,8 +2,6 @@ package com.fulop.novel_v2.activities;
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,6 +11,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.fulop.novel_v2.R;
 import com.google.android.material.textfield.TextInputLayout;
@@ -28,7 +28,7 @@ public class LoginActivity extends AppCompatActivity {
     private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
         FirebaseUser user = firebaseAuth.getCurrentUser();
         if (user != null) {
-            startActivity(HomeActivity.newIntent(LoginActivity.this));
+            startActivity(MainActivity.newIntent(LoginActivity.this));
             finish();
         }
     };

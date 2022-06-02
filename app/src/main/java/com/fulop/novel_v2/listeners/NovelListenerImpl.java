@@ -93,11 +93,8 @@ public class NovelListenerImpl implements NovelListener {
             firebaseDB.collection(DATA_NOVELS)
                     .document(novel.getNovelId())
                     .update(DATA_NOVEL_LIKES, novel.getLikes())
-                    .addOnSuccessListener(unused -> {
-                        novelList.setClickable(true);
-                        callback.onUserUpdated();
-                    })
-                    .addOnFailureListener(e -> novelList.setClickable(true));
+                    .addOnSuccessListener(unused -> callback.onRefresh());
+            novelList.setClickable(true);
         }
     }
 

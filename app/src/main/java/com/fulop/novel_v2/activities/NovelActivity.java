@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.fulop.novel_v2.R;
+import com.fulop.novel_v2.database.DatabaseHelper;
 import com.fulop.novel_v2.models.Novel;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -102,9 +103,7 @@ public class NovelActivity extends AppCompatActivity {
                     .addOnFailureListener(e -> {
                         onUploadFailure();
                     });
-        }).addOnFailureListener(e -> {
-            onUploadFailure();
-        });
+        }).addOnFailureListener(e -> onUploadFailure());
     }
 
     private void onUploadFailure() {
@@ -115,12 +114,14 @@ public class NovelActivity extends AppCompatActivity {
     public void postNovel(View view) {
         novelProgressLayout.setVisibility(View.VISIBLE);
 
-        DocumentReference novelreference = firebaseDB.collection(DATA_NOVELS).document();
+        DatabaseHelper db = new DatabaseHelper(this);
+
+        DocumentReference novelReference = firebaseDB.collection(DATA_NOVELS).document();
         String novelText = this.novelText.getText().toString();
         List<String> hashtags = getHashtags(novelText);
 
         Novel novel = new Novel();
-        novel.setNovelId(novelreference.getId());
+        novel.setNovelId(novelReference.getId());
         novel.setText(novelText);
         novel.setUsername(userName);
         novel.setUserIds(Arrays.asList(userId));
@@ -129,13 +130,14 @@ public class NovelActivity extends AppCompatActivity {
         novel.setImageUrl(imageUrl);
         novel.setTimestamp(System.currentTimeMillis());
 
-        novelreference.set(novel).addOnCompleteListener(unused -> {
-            finish();
-        }).addOnFailureListener(e -> {
-            e.printStackTrace();
-            novelProgressLayout.setVisibility(View.GONE);
-            Toast.makeText(this, "Novel post failed. Please try again later", Toast.LENGTH_SHORT).show();
-        });
+        novelReference.set(novel)
+                .addOnCompleteListener(unused -> finish())
+                .addOnFailureListener(e -> {
+                    e.printStackTrace();
+                    novelProgressLayout.setVisibility(View.GONE);
+                    Toast.makeText(this, "Novel post failed. Please try again later", Toast.LENGTH_SHORT).show();
+                });
+        db.addNovel(novel);
     }
 
     private List<String> getHashtags(String text) {
@@ -149,8 +151,7 @@ public class NovelActivity extends AppCompatActivity {
             int firstSpace = text.indexOf(" ");
             int firstHash = text.indexOf("#");
 
-            if (firstSpace == -1 && firstHash == -1)
-                hashtag = text.substring(0);
+            if (firstSpace == -1 && firstHash == -1) hashtag = text;
             else if (firstSpace != -1 && firstSpace < firstHash) {
                 hashtag = text.substring(0, firstSpace);
                 text = text.substring(firstSpace + 1);

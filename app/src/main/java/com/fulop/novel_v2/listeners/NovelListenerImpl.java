@@ -94,6 +94,7 @@ public class NovelListenerImpl implements NovelListener {
                     .document(novel.getNovelId())
                     .update(DATA_NOVEL_LIKES, novel.getLikes())
                     .addOnSuccessListener(unused -> callback.onRefresh());
+//            UPDATE LIKES INSIDE DB
             novelList.setClickable(true);
         }
     }
@@ -108,12 +109,10 @@ public class NovelListenerImpl implements NovelListener {
             firebaseDB.collection(DATA_NOVELS)
                     .document(novel.getNovelId())
                     .update(DATA_NOVEL_USER_IDS, novel.getUserIds())
-                    .addOnSuccessListener(unused -> {
-                        novelList.setClickable(true);
-                        callback.onRefresh();
-                    })
-                    .addOnFailureListener(e -> novelList.setClickable(true));
+                    .addOnSuccessListener(unused -> callback.onRefresh());
+            novelList.setClickable(true);
         }
+        //            UPDATE SHARES INSIDE DB
     }
 
     public RecyclerView getNovelList() {

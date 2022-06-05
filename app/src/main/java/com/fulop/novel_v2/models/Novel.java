@@ -4,11 +4,11 @@ import java.util.List;
 
 public class Novel implements Comparable<Novel> {
     private String novelId;
-    private List<String> userIds;
     private String username;
     private String text;
     private String imageUrl;
     private Long timestamp;
+    private List<String> userIds;
     private List<String> hashtags;
     private List<String> likes;
 

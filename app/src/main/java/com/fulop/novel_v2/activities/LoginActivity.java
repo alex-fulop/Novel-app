@@ -27,6 +27,7 @@ public class LoginActivity extends AppCompatActivity {
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
         FirebaseUser user = firebaseAuth.getCurrentUser();
+//        if(user == null) = GET USER FROM DB
         if (user != null) {
             startActivity(MainActivity.newIntent(LoginActivity.this));
             finish();

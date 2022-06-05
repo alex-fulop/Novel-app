@@ -48,7 +48,7 @@ public class MyActivityFragment extends NovelFragment {
                 })
                 .addOnFailureListener(Throwable::printStackTrace);
         novelList.setVisibility(View.VISIBLE);
-
+//    SEARCH FOR NOVELS LOCALLY
     }
 
     @Override

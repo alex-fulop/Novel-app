@@ -72,6 +72,7 @@ public class HomeFragment extends NovelFragment {
                     e.printStackTrace();
                     novelList.setVisibility(View.VISIBLE);
                 });
+//        SEARCH FOR NOVELS LOCALLY
     }
 
     private void updateAdapter(List<Novel> novels) {

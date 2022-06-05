@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import com.fulop.novel_v2.R;
 import com.fulop.novel_v2.api.TweetsAsyncApiCall;
 import com.fulop.novel_v2.api.UsersAsyncApiCall;
+import com.fulop.novel_v2.database.DatabaseHelper;
 import com.fulop.novel_v2.models.Novel;
 import com.fulop.novel_v2.models.NovelUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -102,6 +103,7 @@ public class SearchFragment extends NovelFragment {
                     novelListAdapter.updateNovels(novels);
                 })
                 .addOnFailureListener(Throwable::printStackTrace);
+//        SEARCH FOR NOVELS LOCALLY
         updateFollowDrawable();
     }
 
@@ -143,6 +145,8 @@ public class SearchFragment extends NovelFragment {
     }
 
     private void createUserFromTweet(User user) {
+        DatabaseHelper db = new DatabaseHelper(getContext());
+
         NovelUser novelUser = new NovelUser();
         novelUser.setUsername(user.getDisplayedName());
         novelUser.setEmail(user.getName() + "@novel.com");
@@ -150,6 +154,7 @@ public class SearchFragment extends NovelFragment {
         novelUser.setFollowUsers(new ArrayList<>());
         novelUser.setFollowHashtags(new ArrayList<>());
         firebaseDB.collection(DATA_USERS).document(user.getId()).set(novelUser);
+        db.addUser(novelUser);
     }
 
     private User getTweetUser(TweetData tweet) {
@@ -167,10 +172,11 @@ public class SearchFragment extends NovelFragment {
     }
 
     private void createNovelFromTweet(TweetData tweet) {
-        DocumentReference novelreference = firebaseDB.collection(DATA_NOVELS).document(tweet.getId());
+        DocumentReference novelReference = firebaseDB.collection(DATA_NOVELS).document(tweet.getId());
+        DatabaseHelper db = new DatabaseHelper(getContext());
 
         Novel novel = new Novel();
-        novel.setNovelId(novelreference.getId());
+        novel.setNovelId(novelReference.getId());
         novel.setText(tweet.getText());
         novel.setUsername(tweet.getUser().getName());
         novel.setUserIds(Arrays.asList(tweet.getAuthorId()));
@@ -179,7 +185,8 @@ public class SearchFragment extends NovelFragment {
         novel.setTimestamp(System.currentTimeMillis());
         if (tweet.getAttachments() != null)
             novel.setImageUrl(tweet.getAttachments().getMediaKeys()[0]);
-        novelreference.set(novel);
+        novelReference.set(novel);
+        db.addNovel(novel);
     }
 
     private void followOrUnfollowClickedHashtag() {

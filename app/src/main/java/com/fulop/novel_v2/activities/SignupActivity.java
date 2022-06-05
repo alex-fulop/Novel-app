@@ -32,6 +32,7 @@ public class SignupActivity extends AppCompatActivity {
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
         FirebaseUser user = firebaseAuth.getCurrentUser();
+//        if(user == null) user = GET USER FROM DB
         if (user != null) {
             startActivity(MainActivity.newIntent(SignupActivity.this));
             finish();
@@ -124,24 +125,27 @@ public class SignupActivity extends AppCompatActivity {
 
         if (proceed) {
             signupProgressLayout.setVisibility(View.VISIBLE);
+
+            NovelUser user = new NovelUser();
+            user.setUsername(username);
+            user.setEmail(email);
+
             firebaseAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(task -> {
                         if (!task.isSuccessful()) {
                             String error = String.format("Signup Error: %s",
                                     requireNonNull(task.getException()).getLocalizedMessage());
                             Toast.makeText(this, error, Toast.LENGTH_LONG).show();
-                        } else {
-                            NovelUser user = new NovelUser();
-                            user.setUsername(username);
-                            user.setEmail(email);
+                        } else
                             firebaseDB.collection(DATA_USERS).document(firebaseAuth.getUid()).set(user);
-                        }
                         signupProgressLayout.setVisibility(View.GONE);
-
-                    }).addOnFailureListener(e -> {
-                e.printStackTrace();
-                signupProgressLayout.setVisibility(View.GONE);
-            });
+                    })
+                    .addOnFailureListener(e -> {
+                        e.printStackTrace();
+                        signupProgressLayout.setVisibility(View.GONE);
+                    });
+//            DatabaseHelper db = new DatabaseHelper(this);
+//            db.addUser(user);
         }
     }
 

@@ -99,7 +99,6 @@ public class ProfileActivity extends AppCompatActivity {
         profileProgressLayout.setVisibility(View.GONE);
     }
 
-
     private void populateInfo() {
         profileProgressLayout.setVisibility(View.VISIBLE);
         firebaseDB.collection(DATA_USERS)

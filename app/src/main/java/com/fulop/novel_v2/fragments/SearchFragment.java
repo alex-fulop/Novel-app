@@ -4,7 +4,6 @@ import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_HASHTAGS;
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_HASHTAGS;
-import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 import static io.github.redouane59.twitter.dto.tweet.TweetV2.TweetData;
 
 import android.os.Bundle;
@@ -44,6 +43,7 @@ public class SearchFragment extends NovelFragment {
     private ImageView followHashtag;
     private LinearLayout searchProgressLayout;
     private boolean hashtagIsFollowed;
+
     private String searchTerm;
 
 
@@ -67,19 +67,39 @@ public class SearchFragment extends NovelFragment {
 
     @Override
     public void updateList() {
-        if (currentUser.getFollowHashtags() == null)
-            currentUser.setFollowHashtags(new ArrayList<>());
+        List<Novel> novels = new ArrayList<>();
+        firebaseDB.collection(DATA_NOVELS)
+                .whereArrayContains(DATA_NOVEL_HASHTAGS, searchTerm).get()
+                .addOnSuccessListener(list -> {
+                    for (DocumentSnapshot document : list.getDocuments()) {
+                        Novel novel = document.toObject(Novel.class);
+                        if (novel != null) novels.add(novel);
+                    }
+                    Collections.reverse(novels);
+                    novelListAdapter.updateNovels(novels);
+                }).addOnFailureListener(Throwable::printStackTrace);
+    }
 
-        novelList.setVisibility(View.GONE);
-        searchProgressLayout.setVisibility(View.VISIBLE);
+    @Override
+    public void refreshList() {
+        List<Novel> novels = new ArrayList<>();
+        queryTwitterForTweets();
 
         if (searchTerm != null) {
-            if (isNetworkAvailable(requireContext())) {
-                queryTwitterForTweets();
-                refreshList();
-            } else refreshListWithLocalData();
-        }
-        searchProgressLayout.setVisibility(View.GONE);
+            updateList();
+            updateFollowDrawable();
+            saveNovelsLocally(novels);
+        } else refreshListWithLocalData();
+    }
+
+    @Override
+    public void refreshListWithLocalData() {
+        DatabaseHelper db = new DatabaseHelper(getContext());
+        List<Novel> novels = db.findNovelsForSearchTerm(searchTerm);
+
+        Collections.reverse(novels);
+        novelListAdapter.updateNovels(novels);
+        updateFollowDrawable();
     }
 
     private void queryTwitterForTweets() {
@@ -90,38 +110,15 @@ public class SearchFragment extends NovelFragment {
         }
     }
 
-    @Override
-    public void refreshList() {
-        firebaseDB.collection(DATA_NOVELS)
-                .whereArrayContains(DATA_NOVEL_HASHTAGS, searchTerm).get()
-                .addOnSuccessListener(list -> {
-                    novelList.setVisibility(View.VISIBLE);
-                    List<Novel> novels = new ArrayList<>();
-                    for (DocumentSnapshot document : list.getDocuments()) {
-                        Novel novel = document.toObject(Novel.class);
-                        if (novel != null) novels.add(novel);
-                    }
-                    Collections.reverse(novels);
-                    novelListAdapter.updateNovels(novels);
-                }).addOnFailureListener(Throwable::printStackTrace);
-        updateFollowDrawable();
-    }
-
-    @Override
-    public void refreshListWithLocalData() {
-        DatabaseHelper db = new DatabaseHelper(getContext());
-        List<Novel> novels = db.findNovelsForSearchTerm(searchTerm);
-
-        Collections.reverse(novels);
-        novelListAdapter.updateNovels(novels);
-        novelList.setVisibility(View.VISIBLE);
-        updateFollowDrawable();
+    private void saveNovelsLocally(List<Novel> novels) {
+        DatabaseHelper db = new DatabaseHelper(requireContext());
+        novels.forEach(db::addNovel);
     }
 
     public void searchByHashtag(String term) {
         searchTerm = term;
         followHashtag.setVisibility(View.VISIBLE);
-        updateList();
+        refreshList();
     }
 
     private void createNovelUserForTweetIfNotPresent(TweetData tweet) {
@@ -221,8 +218,11 @@ public class SearchFragment extends NovelFragment {
     }
 
     private void updateFollowDrawable() {
-        hashtagIsFollowed = currentUser.getFollowHashtags()
-                .contains(searchTerm);
+        if (currentUser.getFollowHashtags() == null)
+            currentUser.setFollowHashtags(new ArrayList<>());
+
+        hashtagIsFollowed = currentUser.getFollowHashtags().contains(searchTerm);
+
         if (getContext() != null)
             if (hashtagIsFollowed)
                 followHashtag.setImageDrawable(ContextCompat

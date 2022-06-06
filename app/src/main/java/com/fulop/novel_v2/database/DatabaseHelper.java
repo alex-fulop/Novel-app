@@ -233,6 +233,40 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         });
     }
 
+    public void onNovelLike(String novelId, String userId) {
+        List<String> novelLikes = getNovelLikes(novelId);
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        if (!novelLikes.contains(userId)) {
+            cv.put(NOVELS_LIKES_NOVEL_ID, novelId);
+            cv.put(NOVELS_LIKES_USER_LIKE, userId);
+
+            db.insert(TABLE_NOVELS_LIKES, null, cv);
+        } else
+            db.delete(TABLE_NOVELS_LIKES, NOVELS_LIKES_NOVEL_ID + " =? AND " +
+                    NOVELS_LIKES_USER_LIKE + "=?", new String[]{novelId, userId});
+        cv.clear();
+    }
+
+    public void onNovelShare(String novelId, String userId) {
+        List<String> novelLikes = getNovelShares(novelId);
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        if (!novelLikes.contains(userId)) {
+            cv.put(NOVELS_USER_IDS_NOVEL_ID, novelId);
+            cv.put(NOVELS_USER_IDS_USER_ID, userId);
+
+            db.insert(TABLE_NOVELS_USER_IDS, null, cv);
+        } else
+            db.delete(TABLE_NOVELS_USER_IDS, NOVELS_USER_IDS_NOVEL_ID + " =? AND " +
+                    NOVELS_USER_IDS_USER_ID + "=?", new String[]{novelId, userId});
+        cv.clear();
+    }
+
     public void updateUser(NovelUser user, String userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -259,29 +293,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         });
     }
 
+    public List<Novel> findNovelsByHashtag(String hashtag) {
+        List<String> novelIds = getNovelsByHashtag(hashtag);
+        return getNovelsByIds(novelIds);
+    }
+
+    public List<Novel> findNovelsByFollowedUser(String followedUserId) {
+        List<String> novelIds = getNovelsByFollowedUserId(followedUserId);
+        return getNovelsByIds(novelIds);
+    }
+
     public List<Novel> findNovelsForSearchTerm(String searchTerm) {
         List<String> novelIds = getNovelIdsForSearchedTerm(searchTerm);
         return getNovelsByIds(novelIds);
     }
 
+//    public List<Novel> findNovelsById(String novelId) {
+//        List<String> novelIds = getNovelIdsForSearchedTerm(novelId);
+//        return getNovelsByIds(novelIds);
+//    }
+
     public List<Novel> findNovelsForUserId(String userId) {
-        List<String> novelIds = findNovelIdsForUserId(userId);
+        List<String> novelIds = getNovelIdsForUserId(userId);
         return getNovelsByIds(novelIds);
-    }
-
-    public List<String> findNovelIdsForUserId(String userId) {
-        String query = "SELECT " + NOVELS_USER_IDS_NOVEL_ID +
-                " FROM " + TABLE_NOVELS_USER_IDS +
-                " WHERE " + NOVELS_USER_IDS_USER_ID + " = " + userId + ");";
-
-        return getNovelsForQuery(query);
     }
 
     private List<Novel> getNovelsByIds(List<String> novelIds) {
         novelIds.replaceAll(id -> "\"" + id + "\"");
         String query = "SELECT * FROM " + TABLE_NOVELS +
                 " WHERE " + NOVELS_ID +
-                " IN (" + TextUtils.join("\", \"", novelIds) + ");";
+                " IN (" + TextUtils.join(", ", novelIds) + ");";
 
         List<Novel> novels = new ArrayList<>();
         Cursor cursor = getCursorForQuery(query);
@@ -292,12 +333,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return novels;
     }
 
+    public List<String> getNovelLikes(String novelId) {
+        String query = "SELECT " + NOVELS_LIKES_USER_LIKE +
+                " FROM " + TABLE_NOVELS_LIKES +
+                " WHERE " + NOVELS_LIKES_NOVEL_ID +
+                " = " + "\"" + novelId + "\"";
+
+        return getNovelIdsForQuery(query);
+    }
+
+    public List<String> getNovelShares(String novelId) {
+        String query = "SELECT " + NOVELS_USER_IDS_USER_ID +
+                " FROM " + TABLE_NOVELS_USER_IDS +
+                " WHERE " + NOVELS_USER_IDS_NOVEL_ID +
+                " = " + "\"" + novelId + "\"";
+
+        return getNovelIdsForQuery(query);
+    }
+
+    public List<String> getNovelIdsForUserId(String userId) {
+        String query = "SELECT " + NOVELS_USER_IDS_NOVEL_ID +
+                " FROM " + TABLE_NOVELS_USER_IDS +
+                " WHERE " + NOVELS_USER_IDS_USER_ID + " = \"" + userId + "\"";
+
+        return getNovelIdsForQuery(query);
+    }
+
     private List<String> getUserIdsForNovel(String novelId) {
         String query = "SELECT " + NOVELS_USER_IDS_USER_ID +
                 " FROM " + TABLE_NOVELS_USER_IDS +
                 " WHERE " + NOVELS_USER_IDS_NOVEL_ID + " = \"" + novelId + "\"";
 
-        return getNovelsForQuery(query);
+        return getNovelIdsForQuery(query);
     }
 
     private List<String> getLikesForNovel(String novelId) {
@@ -305,7 +372,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " FROM " + TABLE_NOVELS_LIKES +
                 " WHERE " + NOVELS_LIKES_NOVEL_ID + " = \"" + novelId + "\"";
 
-        return getNovelsForQuery(query);
+        return getNovelIdsForQuery(query);
     }
 
     private List<String> getHashtagsForNovel(String novelId) {
@@ -313,7 +380,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " FROM " + TABLE_NOVELS_HASHTAGS +
                 " WHERE " + NOVELS_HASHTAGS_NOVEL_ID + " = \"" + novelId + "\"";
 
-        return getNovelsForQuery(query);
+        return getNovelIdsForQuery(query);
     }
 
     private List<String> getNovelIdsForSearchedTerm(String searchTerm) {
@@ -321,11 +388,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " FROM " + TABLE_NOVELS_HASHTAGS +
                 " WHERE " + NOVELS_HASHTAGS_HASHTAG + " = \"" + searchTerm + "\"";
 
-        return getNovelsForQuery(query);
+        return getNovelIdsForQuery(query);
     }
 
+    private List<String> getNovelsByFollowedUserId(String followedUserId) {
+        String query = "SELECT " + NOVELS_USER_IDS_NOVEL_ID +
+                " FROM " + TABLE_NOVELS_USER_IDS +
+                " WHERE " + NOVELS_USER_IDS_USER_ID +
+                " = \"" + followedUserId + "\"";
+
+        return getNovelIdsForQuery(query);
+    }
+
+    private List<String> getNovelsByHashtag(String hashtag) {
+        String query = "SELECT " + NOVELS_HASHTAGS_NOVEL_ID +
+                " FROM " + TABLE_NOVELS_HASHTAGS +
+                " WHERE " + NOVELS_HASHTAGS_HASHTAG +
+                " = \"" + hashtag + "\"";
+
+        return getNovelIdsForQuery(query);
+    }
+
+//    private List<String> getNovelById(String novelId) {
+//        String query = "SELECT " + NOVELS_HASHTAGS_NOVEL_ID +
+//                " FROM " + TABLE_NOVELS_HASHTAGS +
+//                " WHERE " + NOVELS_HASHTAGS_HASHTAG + " = \"" + novelId + "\"";
+//
+//        return getNovelIdsForQuery(query);
+//    }
+
     @NonNull
-    private List<String> getNovelsForQuery(String query) {
+    private List<String> getNovelIdsForQuery(String query) {
         List<String> novelIds = new ArrayList<>();
         Cursor cursor = getCursorForQuery(query);
         if (cursor != null) {
@@ -333,15 +426,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             cursor.close();
         }
         return novelIds;
-    }
-
-    @Nullable
-    private Cursor getCursorForQuery(String query) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-
-        if (db != null) cursor = db.rawQuery(query, null);
-        return cursor;
     }
 
     @NonNull
@@ -361,5 +445,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             novels.add(novel);
         }
         return novels;
+    }
+
+    @Nullable
+    private Cursor getCursorForQuery(String query) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+
+        if (db != null) cursor = db.rawQuery(query, null);
+        return cursor;
     }
 }

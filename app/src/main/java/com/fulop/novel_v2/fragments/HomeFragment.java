@@ -3,6 +3,7 @@ package com.fulop.novel_v2.fragments;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_HASHTAGS;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_USER_IDS;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.fulop.novel_v2.R;
+import com.fulop.novel_v2.database.DatabaseHelper;
 import com.fulop.novel_v2.models.Novel;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -37,32 +39,52 @@ public class HomeFragment extends NovelFragment {
 
     @Override
     public void updateList() {
-        novelList.setVisibility(View.GONE);
+        if (isNetworkAvailable(requireContext())) refreshList();
+        else refreshListWithLocalData();
+    }
+
+    @Override
+    public void refreshList() {
         if (currentUser != null) {
-            if (currentUser.getFollowUsers() == null) currentUser.setFollowUsers(new ArrayList<>());
             List<Novel> novels = new ArrayList<>();
+
+            if (currentUser.getFollowUsers() == null)
+                currentUser.setFollowUsers(new ArrayList<>());
 
             if (currentUser.getFollowHashtags() == null)
                 currentUser.setFollowHashtags(new ArrayList<>());
 
             for (String hashtag : currentUser.getFollowHashtags())
-                addNovels(novels, hashtag, DATA_NOVEL_HASHTAGS);
+                addNovelsToDisplay(novels, hashtag, DATA_NOVEL_HASHTAGS);
             for (String followedUser : currentUser.getFollowUsers())
-                addNovels(novels, followedUser, DATA_NOVEL_USER_IDS);
+                addNovelsToDisplay(novels, followedUser, DATA_NOVEL_USER_IDS);
+
+            updateAdapter(novels);
         }
     }
 
     @Override
-    public void refreshList() {
-        updateList();
-    }
-
-    @Override
     public void refreshListWithLocalData() {
+        if (currentUser != null) {
+            List<Novel> novels = new ArrayList<>();
+            DatabaseHelper db = new DatabaseHelper(requireContext());
 
+            if (currentUser.getFollowUsers() == null)
+                currentUser.setFollowUsers(new ArrayList<>());
+
+            if (currentUser.getFollowHashtags() == null)
+                currentUser.setFollowHashtags(new ArrayList<>());
+
+            for (String hashtag : currentUser.getFollowHashtags())
+                novels.addAll(db.findNovelsByHashtag(hashtag));
+            for (String followedUser : currentUser.getFollowUsers())
+                novels.addAll(db.findNovelsByFollowedUser(followedUser));
+
+            updateAdapter(novels);
+        }
     }
 
-    private void addNovels(List<Novel> novels, String novelId, String novelTable) {
+    private void addNovelsToDisplay(List<Novel> novels, String novelId, String novelTable) {
         firebaseDB.collection(DATA_NOVELS)
                 .whereArrayContains(novelTable, novelId).get()
                 .addOnSuccessListener(list -> {
@@ -71,13 +93,8 @@ public class HomeFragment extends NovelFragment {
                         if (novel != null) novels.add(novel);
                     }
                     updateAdapter(novels);
-                    novelList.setVisibility(View.VISIBLE);
                 })
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                    novelList.setVisibility(View.VISIBLE);
-                });
-//        SEARCH FOR NOVELS LOCALLY
+                .addOnFailureListener(Throwable::printStackTrace);
     }
 
     private void updateAdapter(List<Novel> novels) {

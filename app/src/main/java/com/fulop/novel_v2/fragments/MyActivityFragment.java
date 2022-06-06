@@ -15,8 +15,8 @@ import com.fulop.novel_v2.models.Novel;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MyActivityFragment extends NovelFragment {
 
@@ -33,38 +33,33 @@ public class MyActivityFragment extends NovelFragment {
 
     @Override
     public void updateList() {
-        novelList.setVisibility(View.GONE);
-        List<Novel> novels = new ArrayList<>();
-
-        if (isNetworkAvailable(requireContext())) {
-            firebaseDB.collection(DATA_NOVELS)
-                    .whereArrayContains(DATA_NOVEL_USER_IDS, userId).get()
-                    .addOnSuccessListener(list -> {
-                        for (DocumentSnapshot document : list.getDocuments()) {
-                            Novel novel = document.toObject(Novel.class);
-                            if (novel != null) novels.add(novel);
-                        }
-                    })
-                    .addOnFailureListener(Throwable::printStackTrace);
-        } else {
-            DatabaseHelper db = new DatabaseHelper(requireContext());
-            novels.addAll(db.findNovelsForUserId(userId));
-        }
-        List<Novel> sortedNovels = novels.stream()
-                .sorted(Novel::compareTo)
-                .collect(Collectors.toList());
-        novelListAdapter.updateNovels(sortedNovels);
-        novelList.setVisibility(View.VISIBLE);
+        if (isNetworkAvailable(requireContext())) refreshList();
+        else refreshListWithLocalData();
     }
 
     @Override
     public void refreshList() {
-        updateList();
+        List<Novel> novels = new ArrayList<>();
+
+        firebaseDB.collection(DATA_NOVELS)
+                .whereArrayContains(DATA_NOVEL_USER_IDS, userId).get()
+                .addOnSuccessListener(list -> {
+                    for (DocumentSnapshot document : list.getDocuments()) {
+                        Novel novel = document.toObject(Novel.class);
+                        if (novel != null) novels.add(novel);
+                    }
+                    Collections.reverse(novels);
+                    novelListAdapter.updateNovels(novels);
+                })
+                .addOnFailureListener(Throwable::printStackTrace);
     }
 
     @Override
     public void refreshListWithLocalData() {
-
+        DatabaseHelper db = new DatabaseHelper(requireContext());
+        List<Novel> novels = db.findNovelsForUserId(userId);
+        Collections.reverse(novels);
+        novelListAdapter.updateNovels(novels);
     }
 
     protected void initFragmentComponents(View view) {

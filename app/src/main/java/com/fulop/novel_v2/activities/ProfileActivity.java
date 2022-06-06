@@ -5,6 +5,7 @@ import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_EMAIL;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_IMAGE_URL;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_USERNAME;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 import static com.fulop.novel_v2.util.Utils.loadUrl;
 
 import android.app.Activity;
@@ -142,16 +143,21 @@ public class ProfileActivity extends AppCompatActivity {
         map.put(DATA_USER_USERNAME, username);
         map.put(DATA_USER_EMAIL, email);
 
-        firebaseDB.collection(DATA_USERS)
-                .document(userId).update(map)
-                .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Update Successful", Toast.LENGTH_SHORT).show();
-                    finish();
-                }).addOnFailureListener(e -> {
-            e.printStackTrace();
-            Toast.makeText(this, "Update failed. Please try again.", Toast.LENGTH_SHORT).show();
-            profileProgressLayout.setVisibility(View.GONE);
-        });
+        if (isNetworkAvailable(this)) {
+            firebaseDB.collection(DATA_USERS)
+                    .document(userId).update(map)
+                    .addOnSuccessListener(unused -> {
+                        Toast.makeText(this, "Update Successful", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }).addOnFailureListener(e -> {
+                e.printStackTrace();
+                Toast.makeText(this, "Update failed. Please try again.", Toast.LENGTH_SHORT).show();
+                profileProgressLayout.setVisibility(View.GONE);
+            });
+        } else {
+            finish();
+        }
+
     }
 
     public void onSignOut(View view) {

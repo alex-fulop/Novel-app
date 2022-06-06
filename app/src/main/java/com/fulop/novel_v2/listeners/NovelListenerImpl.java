@@ -42,9 +42,11 @@ public class NovelListenerImpl implements NovelListener {
         if (novel != null) {
             String ownerId = novel.getUserIds().get(0);
             if (!Objects.equals(userId, ownerId)) {
-                if (user.getFollowUsers() == null) user.setFollowUsers(new ArrayList<>());
-                boolean isOwnerFollowingUser = user.getFollowUsers().contains(ownerId);
-                displayAlertDialog(isOwnerFollowingUser, novel, ownerId);
+                if (isNetworkAvailable(novelList.getContext())) {
+                    if (user.getFollowUsers() == null) user.setFollowUsers(new ArrayList<>());
+                    boolean isOwnerFollowingUser = user.getFollowUsers().contains(ownerId);
+                    displayAlertDialog(isOwnerFollowingUser, novel, ownerId);
+                }
             }
         }
     }
@@ -53,19 +55,23 @@ public class NovelListenerImpl implements NovelListener {
     public void onLike(Novel novel) {
         if (novel != null) {
             novelList.setClickable(false);
-            if (novel.getLikes().contains(userId)) novel.getLikes().remove(userId);
-            else novel.getLikes().add(userId);
-
             if (isNetworkAvailable(novelList.getContext())) {
+                if (novel.getLikes().contains(userId)) novel.getLikes().remove(userId);
+                else novel.getLikes().add(userId);
+
                 firebaseDB.collection(DATA_NOVELS)
                         .document(novel.getNovelId())
                         .update(DATA_NOVEL_LIKES, novel.getLikes())
-                        .addOnSuccessListener(unused -> callback.onRefresh());
+                        .addOnSuccessListener(unused -> {
+                            callback.onRefresh();
+                            novelList.setClickable(true);
+                        });
             } else {
                 DatabaseHelper db = new DatabaseHelper(novelList.getContext());
-                db.updateNovel(novel);
+                db.onNovelLike(novel.getNovelId(), userId);
+                callback.onRefresh();
+                novelList.setClickable(true);
             }
-            novelList.setClickable(true);
         }
     }
 
@@ -73,24 +79,29 @@ public class NovelListenerImpl implements NovelListener {
     public void onShare(Novel novel) {
         if (novel != null) {
             novelList.setClickable(false);
-            if (novel.getUserIds().contains(userId)) novel.getUserIds().remove(userId);
-            else novel.getUserIds().add(userId);
             if (isNetworkAvailable(novelList.getContext())) {
+                if (novel.getUserIds().contains(userId)) novel.getUserIds().remove(userId);
+                else novel.getUserIds().add(userId);
+
                 firebaseDB.collection(DATA_NOVELS)
                         .document(novel.getNovelId())
                         .update(DATA_NOVEL_USER_IDS, novel.getUserIds())
-                        .addOnSuccessListener(unused -> callback.onRefresh());
+                        .addOnSuccessListener(unused -> {
+                            callback.onRefresh();
+                            novelList.setClickable(true);
+                        });
             } else {
                 DatabaseHelper db = new DatabaseHelper(novelList.getContext());
-                db.updateNovel(novel);
+                db.onNovelShare(novel.getNovelId(), userId);
+                callback.onRefresh();
+                novelList.setClickable(true);
             }
-            novelList.setClickable(true);
         }
     }
 
     private void displayAlertDialog(boolean isOwnerFollowingUser, Novel novel, String ownerId) {
         new AlertDialog.Builder(novelList.getContext())
-                .setTitle(String.format(isOwnerFollowingUser ? "Follow %s?" : "Unfollow %s?", novel.getUsername()))
+                .setTitle(String.format(isOwnerFollowingUser ? "Unfollow %s?" : "Follow %s?", novel.getUsername()))
                 .setPositiveButton("Yes", (dialog, which) -> {
                     novelList.setClickable(false);
                     if (isOwnerFollowingUser) user.getFollowUsers().remove(ownerId);
@@ -105,14 +116,15 @@ public class NovelListenerImpl implements NovelListener {
             firebaseDB.collection(DATA_USERS)
                     .document(userId)
                     .update(DATA_USER_FOLLOW, user.getFollowUsers());
-        } else {
-            DatabaseHelper db = new DatabaseHelper(novelList.getContext());
-            db.updateUser(user, userId);
         }
+//        else {
+//            DatabaseHelper db = new DatabaseHelper(novelList.getContext());
+//            db.updateUser(user, userId);
+//        }
         novelList.setClickable(true);
         callback.onUserUpdated();
         Toast.makeText(novelList.getContext(), followed ?
-                "User followed successfully" : "User unfollowed successfully", Toast.LENGTH_SHORT).show();
+                "User unfollowed successfully" : "User followed successfully", Toast.LENGTH_SHORT).show();
     }
 
     public RecyclerView getNovelList() {

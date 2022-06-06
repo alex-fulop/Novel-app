@@ -36,13 +36,19 @@ import static com.fulop.novel_v2.util.Constants.USERS_USERNAME;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.fulop.novel_v2.models.Novel;
 import com.fulop.novel_v2.models.NovelUser;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -83,7 +89,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "\n FOREIGN KEY(" + NOVELS_LIKES_NOVEL_ID + ") " +
                 "REFERENCES " + TABLE_NOVELS + "(" + NOVELS_ID + "));";
 
-
         String createUsersTable = "CREATE TABLE " + TABLE_USERS + " (" +
                 USERS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 USERS_USERNAME + " TEXT, " +
@@ -108,11 +113,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(createNovelUserIdsTable);
         db.execSQL(createNovelLikesTable);
         db.execSQL(createNovelHashtagsTable);
-
         db.execSQL(createUsersTable);
         db.execSQL(createUserFollowHashtagsTable);
         db.execSQL(createUserFollowUsersTable);
-
     }
 
     @Override
@@ -176,20 +179,187 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         long userId = db.insert(TABLE_USERS, null, cv);
         cv.clear();
 
+        if (user.getFollowUsers() != null)
+            user.getFollowUsers().forEach(followUser -> {
+                cv.put(USERS_FOLLOW_USERS_USER_ID, userId);
+                cv.put(USERS_FOLLOW_USERS_FOLLOW_USER, followUser);
+
+                db.insert(TABLE_USERS_FOLLOW_USERS, null, cv);
+                cv.clear();
+            });
+
+        if (user.getFollowHashtags() != null)
+            user.getFollowHashtags().forEach(hashtag -> {
+                cv.put(USERS_FOLLOW_HASHTAGS_ID, userId);
+                cv.put(USERS_FOLLOW_HASHTAGS_HASHTAG, hashtag);
+
+                db.insert(TABLE_USERS_FOLLOW_USERS, null, cv);
+                cv.clear();
+            });
+    }
+
+    public void updateNovel(Novel novel) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        cv.put(NOVELS_ID, novel.getNovelId());
+        cv.put(NOVELS_USERNAME, novel.getUsername());
+        cv.put(NOVELS_TEXT, novel.getText());
+        cv.put(NOVELS_IMAGE_URL, novel.getImageUrl());
+        cv.put(NOVELS_TIMESTAMP, novel.getTimestamp());
+
+        db.update(TABLE_NOVELS, cv, NOVELS_ID + "=?", new String[]{novel.getNovelId()});
+        cv.clear();
+
+        novel.getUserIds().forEach(userId -> {
+            cv.put(NOVELS_USER_IDS_USER_ID, userId);
+
+            db.update(TABLE_NOVELS_USER_IDS, cv, NOVELS_USER_IDS_NOVEL_ID + "=?", new String[]{novel.getNovelId()});
+            cv.clear();
+        });
+
+        novel.getHashtags().forEach(hashtag -> {
+            cv.put(NOVELS_HASHTAGS_HASHTAG, hashtag);
+
+            db.update(TABLE_NOVELS_HASHTAGS, cv, NOVELS_HASHTAGS_NOVEL_ID + "=?", new String[]{novel.getNovelId()});
+            cv.clear();
+        });
+
+        novel.getLikes().forEach(like -> {
+            cv.put(NOVELS_LIKES_USER_LIKE, like);
+
+            db.update(TABLE_NOVELS_LIKES, cv, NOVELS_LIKES_NOVEL_ID + "=?", new String[]{novel.getNovelId()});
+            cv.clear();
+        });
+    }
+
+    public void updateUser(NovelUser user, String userId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        cv.put(USERS_USERNAME, user.getUsername());
+        cv.put(USERS_EMAIL, user.getEmail());
+        cv.put(USERS_IMAGE_URL, user.getImageUrl());
+
+        db.update(TABLE_USERS, cv, USERS_ID + "=?", new String[]{userId});
+        cv.clear();
+
         user.getFollowUsers().forEach(followUser -> {
-            cv.put(USERS_FOLLOW_USERS_USER_ID, userId);
             cv.put(USERS_FOLLOW_USERS_FOLLOW_USER, followUser);
 
-            db.insert(TABLE_USERS_FOLLOW_USERS, null, cv);
+            db.update(TABLE_USERS_FOLLOW_USERS, cv, USERS_FOLLOW_USERS_USER_ID + "=?", new String[]{userId});
             cv.clear();
         });
 
         user.getFollowHashtags().forEach(hashtag -> {
-            cv.put(USERS_FOLLOW_HASHTAGS_ID, userId);
             cv.put(USERS_FOLLOW_HASHTAGS_HASHTAG, hashtag);
 
-            db.insert(TABLE_USERS_FOLLOW_USERS, null, cv);
+            db.update(TABLE_USERS_FOLLOW_HASHTAGS, cv, USERS_FOLLOW_HASHTAGS_USER_ID + "=?", new String[]{userId});
             cv.clear();
         });
+    }
+
+    public List<Novel> findNovelsForSearchTerm(String searchTerm) {
+        List<String> novelIds = getNovelIdsForSearchedTerm(searchTerm);
+        return getNovelsByIds(novelIds);
+    }
+
+    public List<Novel> findNovelsForUserId(String userId) {
+        List<String> novelIds = findNovelIdsForUserId(userId);
+        return getNovelsByIds(novelIds);
+    }
+
+    public List<String> findNovelIdsForUserId(String userId) {
+        String query = "SELECT " + NOVELS_USER_IDS_NOVEL_ID +
+                " FROM " + TABLE_NOVELS_USER_IDS +
+                " WHERE " + NOVELS_USER_IDS_USER_ID + " = " + userId + ");";
+
+        return getNovelsForQuery(query);
+    }
+
+    private List<Novel> getNovelsByIds(List<String> novelIds) {
+        novelIds.replaceAll(id -> "\"" + id + "\"");
+        String query = "SELECT * FROM " + TABLE_NOVELS +
+                " WHERE " + NOVELS_ID +
+                " IN (" + TextUtils.join("\", \"", novelIds) + ");";
+
+        List<Novel> novels = new ArrayList<>();
+        Cursor cursor = getCursorForQuery(query);
+        if (cursor != null) {
+            novels = getNovelsUsingCursor(cursor);
+            cursor.close();
+        }
+        return novels;
+    }
+
+    private List<String> getUserIdsForNovel(String novelId) {
+        String query = "SELECT " + NOVELS_USER_IDS_USER_ID +
+                " FROM " + TABLE_NOVELS_USER_IDS +
+                " WHERE " + NOVELS_USER_IDS_NOVEL_ID + " = \"" + novelId + "\"";
+
+        return getNovelsForQuery(query);
+    }
+
+    private List<String> getLikesForNovel(String novelId) {
+        String query = "SELECT " + NOVELS_LIKES_USER_LIKE +
+                " FROM " + TABLE_NOVELS_LIKES +
+                " WHERE " + NOVELS_LIKES_NOVEL_ID + " = \"" + novelId + "\"";
+
+        return getNovelsForQuery(query);
+    }
+
+    private List<String> getHashtagsForNovel(String novelId) {
+        String query = "SELECT " + NOVELS_HASHTAGS_HASHTAG +
+                " FROM " + TABLE_NOVELS_HASHTAGS +
+                " WHERE " + NOVELS_HASHTAGS_NOVEL_ID + " = \"" + novelId + "\"";
+
+        return getNovelsForQuery(query);
+    }
+
+    private List<String> getNovelIdsForSearchedTerm(String searchTerm) {
+        String query = "SELECT " + NOVELS_HASHTAGS_NOVEL_ID +
+                " FROM " + TABLE_NOVELS_HASHTAGS +
+                " WHERE " + NOVELS_HASHTAGS_HASHTAG + " = \"" + searchTerm + "\"";
+
+        return getNovelsForQuery(query);
+    }
+
+    @NonNull
+    private List<String> getNovelsForQuery(String query) {
+        List<String> novelIds = new ArrayList<>();
+        Cursor cursor = getCursorForQuery(query);
+        if (cursor != null) {
+            while (cursor.moveToNext()) novelIds.add(cursor.getString(0));
+            cursor.close();
+        }
+        return novelIds;
+    }
+
+    @Nullable
+    private Cursor getCursorForQuery(String query) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+
+        if (db != null) cursor = db.rawQuery(query, null);
+        return cursor;
+    }
+
+    @NonNull
+    private List<Novel> getNovelsUsingCursor(Cursor cursor) {
+        List<Novel> novels = new ArrayList<>();
+
+        while (cursor.moveToNext()) {
+            Novel novel = new Novel();
+            novel.setNovelId(cursor.getString(0));
+            novel.setText(cursor.getString(1));
+            novel.setUsername(cursor.getString(2));
+            novel.setImageUrl(cursor.getString(3));
+            novel.setTimestamp(Long.valueOf(cursor.getString(4)));
+            novel.setLikes(getLikesForNovel(cursor.getString(0)));
+            novel.setUserIds(getUserIdsForNovel(cursor.getString(0)));
+            novel.setHashtags(getHashtagsForNovel(cursor.getString(0)));
+            novels.add(novel);
+        }
+        return novels;
     }
 }

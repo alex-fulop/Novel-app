@@ -5,12 +5,14 @@ import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_LIKES;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_USER_IDS;
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_FOLLOW;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 
 import android.app.AlertDialog;
 import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.fulop.novel_v2.database.DatabaseHelper;
 import com.fulop.novel_v2.models.Novel;
 import com.fulop.novel_v2.models.NovelUser;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,46 +43,10 @@ public class NovelListenerImpl implements NovelListener {
             String ownerId = novel.getUserIds().get(0);
             if (!Objects.equals(userId, ownerId)) {
                 if (user.getFollowUsers() == null) user.setFollowUsers(new ArrayList<>());
-                if (user.getFollowUsers().contains(ownerId)) unfollowUser(novel, ownerId);
-                else followUser(novel, ownerId);
+                boolean isOwnerFollowingUser = user.getFollowUsers().contains(ownerId);
+                displayAlertDialog(isOwnerFollowingUser, novel, ownerId);
             }
         }
-    }
-
-    private void unfollowUser(Novel novel, String ownerId) {
-        user.getFollowUsers().remove(ownerId);
-        displayAlertDialog("Unfollow %s?", novel);
-        Toast.makeText(novelList.getContext(),
-                "User unfollowed successfully", Toast.LENGTH_SHORT).show();
-
-    }
-
-    private void followUser(Novel novel, String ownerId) {
-        user.getFollowUsers().add(ownerId);
-        displayAlertDialog("Follow %s?", novel);
-        Toast.makeText(novelList.getContext(),
-                "User followed successfully", Toast.LENGTH_SHORT).show();
-    }
-
-    private void displayAlertDialog(String message, Novel novel) {
-        new AlertDialog.Builder(novelList.getContext())
-                .setTitle(String.format(message, novel.getUsername()))
-                .setPositiveButton("Yes", (dialog, which) -> {
-                    novelList.setClickable(false);
-                    updateFollowedUsers();
-                }).setNegativeButton("Cancel", ((dialog, which) -> {
-        })).show();
-    }
-
-    private void updateFollowedUsers() {
-        firebaseDB.collection(DATA_USERS)
-                .document(userId)
-                .update(DATA_USER_FOLLOW, user.getFollowUsers())
-                .addOnSuccessListener(unused -> {
-                    novelList.setClickable(true);
-                    callback.onUserUpdated();
-                })
-                .addOnFailureListener(e -> novelList.setClickable(true));
     }
 
     @Override
@@ -90,11 +56,15 @@ public class NovelListenerImpl implements NovelListener {
             if (novel.getLikes().contains(userId)) novel.getLikes().remove(userId);
             else novel.getLikes().add(userId);
 
-            firebaseDB.collection(DATA_NOVELS)
-                    .document(novel.getNovelId())
-                    .update(DATA_NOVEL_LIKES, novel.getLikes())
-                    .addOnSuccessListener(unused -> callback.onRefresh());
-//            UPDATE LIKES INSIDE DB
+            if (isNetworkAvailable(novelList.getContext())) {
+                firebaseDB.collection(DATA_NOVELS)
+                        .document(novel.getNovelId())
+                        .update(DATA_NOVEL_LIKES, novel.getLikes())
+                        .addOnSuccessListener(unused -> callback.onRefresh());
+            } else {
+                DatabaseHelper db = new DatabaseHelper(novelList.getContext());
+                db.updateNovel(novel);
+            }
             novelList.setClickable(true);
         }
     }
@@ -105,14 +75,44 @@ public class NovelListenerImpl implements NovelListener {
             novelList.setClickable(false);
             if (novel.getUserIds().contains(userId)) novel.getUserIds().remove(userId);
             else novel.getUserIds().add(userId);
-
-            firebaseDB.collection(DATA_NOVELS)
-                    .document(novel.getNovelId())
-                    .update(DATA_NOVEL_USER_IDS, novel.getUserIds())
-                    .addOnSuccessListener(unused -> callback.onRefresh());
+            if (isNetworkAvailable(novelList.getContext())) {
+                firebaseDB.collection(DATA_NOVELS)
+                        .document(novel.getNovelId())
+                        .update(DATA_NOVEL_USER_IDS, novel.getUserIds())
+                        .addOnSuccessListener(unused -> callback.onRefresh());
+            } else {
+                DatabaseHelper db = new DatabaseHelper(novelList.getContext());
+                db.updateNovel(novel);
+            }
             novelList.setClickable(true);
         }
-        //            UPDATE SHARES INSIDE DB
+    }
+
+    private void displayAlertDialog(boolean isOwnerFollowingUser, Novel novel, String ownerId) {
+        new AlertDialog.Builder(novelList.getContext())
+                .setTitle(String.format(isOwnerFollowingUser ? "Follow %s?" : "Unfollow %s?", novel.getUsername()))
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    novelList.setClickable(false);
+                    if (isOwnerFollowingUser) user.getFollowUsers().remove(ownerId);
+                    else user.getFollowUsers().add(ownerId);
+                    updateFollowedUsers(isOwnerFollowingUser);
+                }).setNegativeButton("Cancel", ((dialog, which) -> {
+        })).show();
+    }
+
+    private void updateFollowedUsers(boolean followed) {
+        if (isNetworkAvailable(novelList.getContext())) {
+            firebaseDB.collection(DATA_USERS)
+                    .document(userId)
+                    .update(DATA_USER_FOLLOW, user.getFollowUsers());
+        } else {
+            DatabaseHelper db = new DatabaseHelper(novelList.getContext());
+            db.updateUser(user, userId);
+        }
+        novelList.setClickable(true);
+        callback.onUserUpdated();
+        Toast.makeText(novelList.getContext(), followed ?
+                "User followed successfully" : "User unfollowed successfully", Toast.LENGTH_SHORT).show();
     }
 
     public RecyclerView getNovelList() {

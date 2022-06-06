@@ -57,6 +57,11 @@ public class HomeFragment extends NovelFragment {
         updateList();
     }
 
+    @Override
+    public void refreshListWithLocalData() {
+
+    }
+
     private void addNovels(List<Novel> novels, String novelId, String novelTable) {
         firebaseDB.collection(DATA_NOVELS)
                 .whereArrayContains(novelTable, novelId).get()

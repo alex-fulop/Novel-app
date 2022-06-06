@@ -4,6 +4,7 @@ import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
 import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_HASHTAGS;
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_HASHTAGS;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 import static io.github.redouane59.twitter.dto.tweet.TweetV2.TweetData;
 
 import android.os.Bundle;
@@ -73,10 +74,11 @@ public class SearchFragment extends NovelFragment {
         searchProgressLayout.setVisibility(View.VISIBLE);
 
         if (searchTerm != null) {
-            queryTwitterForTweets();
-            refreshList();
+            if (isNetworkAvailable(requireContext())) {
+                queryTwitterForTweets();
+                refreshList();
+            } else refreshListWithLocalData();
         }
-
         searchProgressLayout.setVisibility(View.GONE);
     }
 
@@ -101,9 +103,18 @@ public class SearchFragment extends NovelFragment {
                     }
                     Collections.reverse(novels);
                     novelListAdapter.updateNovels(novels);
-                })
-                .addOnFailureListener(Throwable::printStackTrace);
-//        SEARCH FOR NOVELS LOCALLY
+                }).addOnFailureListener(Throwable::printStackTrace);
+        updateFollowDrawable();
+    }
+
+    @Override
+    public void refreshListWithLocalData() {
+        DatabaseHelper db = new DatabaseHelper(getContext());
+        List<Novel> novels = db.findNovelsForSearchTerm(searchTerm);
+
+        Collections.reverse(novels);
+        novelListAdapter.updateNovels(novels);
+        novelList.setVisibility(View.VISIBLE);
         updateFollowDrawable();
     }
 
@@ -192,8 +203,10 @@ public class SearchFragment extends NovelFragment {
     private void followOrUnfollowClickedHashtag() {
         if (currentUser.getFollowHashtags() == null)
             currentUser.setFollowHashtags(new ArrayList<>());
+        hashtagIsFollowed = currentUser.getFollowHashtags().contains(searchTerm);
         if (hashtagIsFollowed) currentUser.getFollowHashtags().remove(searchTerm);
         else currentUser.getFollowHashtags().add(searchTerm);
+        updateFollowDrawable();
     }
 
     private void updateFollowedHashtagsForCurrentUser() {

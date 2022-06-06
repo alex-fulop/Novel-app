@@ -1,6 +1,7 @@
 package com.fulop.novel_v2.activities;
 
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 import static java.util.Objects.requireNonNull;
 
 import android.content.Context;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.fulop.novel_v2.R;
+import com.fulop.novel_v2.database.DatabaseHelper;
 import com.fulop.novel_v2.models.NovelUser;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,7 +34,6 @@ public class SignupActivity extends AppCompatActivity {
     private final FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
     private final FirebaseAuth.AuthStateListener firebaseAuthListener = firebaseAuth -> {
         FirebaseUser user = firebaseAuth.getCurrentUser();
-//        if(user == null) user = GET USER FROM DB
         if (user != null) {
             startActivity(MainActivity.newIntent(SignupActivity.this));
             finish();
@@ -130,22 +131,22 @@ public class SignupActivity extends AppCompatActivity {
             user.setUsername(username);
             user.setEmail(email);
 
-            firebaseAuth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(task -> {
-                        if (!task.isSuccessful()) {
-                            String error = String.format("Signup Error: %s",
-                                    requireNonNull(task.getException()).getLocalizedMessage());
-                            Toast.makeText(this, error, Toast.LENGTH_LONG).show();
-                        } else
-                            firebaseDB.collection(DATA_USERS).document(firebaseAuth.getUid()).set(user);
-                        signupProgressLayout.setVisibility(View.GONE);
-                    })
-                    .addOnFailureListener(e -> {
-                        e.printStackTrace();
-                        signupProgressLayout.setVisibility(View.GONE);
-                    });
-//            DatabaseHelper db = new DatabaseHelper(this);
-//            db.addUser(user);
+            DatabaseHelper db = new DatabaseHelper(this);
+            db.addUser(user);
+
+            if (isNetworkAvailable(this)) {
+                firebaseAuth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(task -> {
+                            if (!task.isSuccessful()) {
+                                String error = String.format("Signup Error: %s",
+                                        requireNonNull(task.getException()).getLocalizedMessage());
+                                Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+                            } else firebaseDB.collection(DATA_USERS)
+                                    .document(firebaseAuth.getUid()).set(user);
+                        })
+                        .addOnFailureListener(Throwable::printStackTrace);
+            }
+            signupProgressLayout.setVisibility(View.GONE);
         }
     }
 

@@ -2,6 +2,7 @@ package com.fulop.novel_v2.activities;
 
 import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
 import static com.fulop.novel_v2.util.Constants.DATA_PICTURE;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 import static com.fulop.novel_v2.util.Utils.loadUrl;
 
 import android.app.Activity;
@@ -114,8 +115,6 @@ public class NovelActivity extends AppCompatActivity {
     public void postNovel(View view) {
         novelProgressLayout.setVisibility(View.VISIBLE);
 
-        DatabaseHelper db = new DatabaseHelper(this);
-
         DocumentReference novelReference = firebaseDB.collection(DATA_NOVELS).document();
         String novelText = this.novelText.getText().toString();
         List<String> hashtags = getHashtags(novelText);
@@ -130,14 +129,19 @@ public class NovelActivity extends AppCompatActivity {
         novel.setImageUrl(imageUrl);
         novel.setTimestamp(System.currentTimeMillis());
 
-        novelReference.set(novel)
-                .addOnCompleteListener(unused -> finish())
-                .addOnFailureListener(e -> {
-                    e.printStackTrace();
-                    novelProgressLayout.setVisibility(View.GONE);
-                    Toast.makeText(this, "Novel post failed. Please try again later", Toast.LENGTH_SHORT).show();
-                });
-        db.addNovel(novel);
+        if (isNetworkAvailable(this)) {
+            novelReference.set(novel)
+                    .addOnCompleteListener(unused -> finish())
+                    .addOnFailureListener(e -> {
+                        e.printStackTrace();
+                        novelProgressLayout.setVisibility(View.GONE);
+                        Toast.makeText(this, "Novel post failed. Please try again later", Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            DatabaseHelper db = new DatabaseHelper(this);
+            db.addNovel(novel);
+            finish();
+        }
     }
 
     private List<String> getHashtags(String text) {

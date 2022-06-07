@@ -1,9 +1,9 @@
 package com.fulop.novel_v2.fragments;
 
 import static com.fulop.novel_v2.util.Constants.DATA_NOVELS;
-import static com.fulop.novel_v2.util.Constants.DATA_NOVEL_HASHTAGS;
 import static com.fulop.novel_v2.util.Constants.DATA_USERS;
 import static com.fulop.novel_v2.util.Constants.DATA_USER_HASHTAGS;
+import static com.fulop.novel_v2.util.Utils.isNetworkAvailable;
 import static io.github.redouane59.twitter.dto.tweet.TweetV2.TweetData;
 
 import android.os.Bundle;
@@ -24,7 +24,6 @@ import com.fulop.novel_v2.database.DatabaseHelper;
 import com.fulop.novel_v2.models.Novel;
 import com.fulop.novel_v2.models.NovelUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -67,29 +66,19 @@ public class SearchFragment extends NovelFragment {
 
     @Override
     public void updateList() {
-        List<Novel> novels = new ArrayList<>();
-        firebaseDB.collection(DATA_NOVELS)
-                .whereArrayContains(DATA_NOVEL_HASHTAGS, searchTerm).get()
-                .addOnSuccessListener(list -> {
-                    for (DocumentSnapshot document : list.getDocuments()) {
-                        Novel novel = document.toObject(Novel.class);
-                        if (novel != null) novels.add(novel);
-                    }
-                    Collections.reverse(novels);
-                    novelListAdapter.updateNovels(novels);
-                }).addOnFailureListener(Throwable::printStackTrace);
+        if (isNetworkAvailable(requireContext())) refreshList();
+        else refreshListWithLocalData();
     }
 
     @Override
     public void refreshList() {
-        List<Novel> novels = new ArrayList<>();
-        queryTwitterForTweets();
-
         if (searchTerm != null) {
+            List<Novel> novels = new ArrayList<>();
+            queryTwitterForTweets();
             updateList();
             updateFollowDrawable();
             saveNovelsLocally(novels);
-        } else refreshListWithLocalData();
+        }
     }
 
     @Override
@@ -99,7 +88,7 @@ public class SearchFragment extends NovelFragment {
 
         Collections.reverse(novels);
         novelListAdapter.updateNovels(novels);
-        updateFollowDrawable();
+//        updateFollowDrawable();
     }
 
     private void queryTwitterForTweets() {
@@ -118,7 +107,8 @@ public class SearchFragment extends NovelFragment {
     public void searchByHashtag(String term) {
         searchTerm = term;
         followHashtag.setVisibility(View.VISIBLE);
-        refreshList();
+        if (isNetworkAvailable(requireContext())) refreshList();
+        else refreshListWithLocalData();
     }
 
     private void createNovelUserForTweetIfNotPresent(TweetData tweet) {

@@ -55,11 +55,28 @@ public class HomeFragment extends NovelFragment {
                 currentUser.setFollowHashtags(new ArrayList<>());
 
             for (String hashtag : currentUser.getFollowHashtags())
-                addNovelsToDisplay(novels, hashtag, DATA_NOVEL_HASHTAGS);
-            for (String followedUser : currentUser.getFollowUsers())
-                addNovelsToDisplay(novels, followedUser, DATA_NOVEL_USER_IDS);
+                firebaseDB.collection(DATA_NOVELS)
+                        .whereArrayContains(DATA_NOVEL_HASHTAGS, hashtag).get()
+                        .addOnSuccessListener(list -> {
+                            for (DocumentSnapshot document : list.getDocuments()) {
+                                Novel novel = document.toObject(Novel.class);
+                                if (novel != null) novels.add(novel);
+                            }
+                            updateAdapter(novels);
+                        })
+                        .addOnFailureListener(Throwable::printStackTrace);
 
-            updateAdapter(novels);
+            for (String followedUser : currentUser.getFollowUsers())
+                firebaseDB.collection(DATA_NOVELS)
+                        .whereArrayContains(DATA_NOVEL_USER_IDS, followedUser).get()
+                        .addOnSuccessListener(list -> {
+                            for (DocumentSnapshot document : list.getDocuments()) {
+                                Novel novel = document.toObject(Novel.class);
+                                if (novel != null) novels.add(novel);
+                            }
+                            updateAdapter(novels);
+                        })
+                        .addOnFailureListener(Throwable::printStackTrace);
         }
     }
 
@@ -84,28 +101,10 @@ public class HomeFragment extends NovelFragment {
         }
     }
 
-    private void addNovelsToDisplay(List<Novel> novels, String novelId, String novelTable) {
-        firebaseDB.collection(DATA_NOVELS)
-                .whereArrayContains(novelTable, novelId).get()
-                .addOnSuccessListener(list -> {
-                    for (DocumentSnapshot document : list.getDocuments()) {
-                        Novel novel = document.toObject(Novel.class);
-                        if (novel != null) novels.add(novel);
-                    }
-                    updateAdapter(novels);
-                })
-                .addOnFailureListener(Throwable::printStackTrace);
-    }
-
     private void updateAdapter(List<Novel> novels) {
-        novelListAdapter.updateNovels(removeDuplicates(novels
-                .stream()
-                .sorted()
-                .collect(Collectors.toList())));
-    }
-
-    private List<Novel> removeDuplicates(List<Novel> originalList) {
-        return originalList.stream().distinct().collect(Collectors.toList());
+        novelListAdapter.updateNovels(novels
+                .stream().distinct().sorted()
+                .collect(Collectors.toList()));
     }
 
     protected void initFragmentComponents(View view) {

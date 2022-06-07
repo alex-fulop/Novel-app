@@ -117,10 +117,6 @@ public class NovelListenerImpl implements NovelListener {
                     .document(userId)
                     .update(DATA_USER_FOLLOW, user.getFollowUsers());
         }
-//        else {
-//            DatabaseHelper db = new DatabaseHelper(novelList.getContext());
-//            db.updateUser(user, userId);
-//        }
         novelList.setClickable(true);
         callback.onUserUpdated();
         Toast.makeText(novelList.getContext(), followed ?

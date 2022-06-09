@@ -308,11 +308,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return getNovelsByIds(novelIds);
     }
 
-//    public List<Novel> findNovelsById(String novelId) {
-//        List<String> novelIds = getNovelIdsForSearchedTerm(novelId);
-//        return getNovelsByIds(novelIds);
-//    }
-
     public List<Novel> findNovelsForUserId(String userId) {
         List<String> novelIds = getNovelIdsForUserId(userId);
         return getNovelsByIds(novelIds);
@@ -408,14 +403,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return getNovelIdsForQuery(query);
     }
-
-//    private List<String> getNovelById(String novelId) {
-//        String query = "SELECT " + NOVELS_HASHTAGS_NOVEL_ID +
-//                " FROM " + TABLE_NOVELS_HASHTAGS +
-//                " WHERE " + NOVELS_HASHTAGS_HASHTAG + " = \"" + novelId + "\"";
-//
-//        return getNovelIdsForQuery(query);
-//    }
 
     @NonNull
     private List<String> getNovelIdsForQuery(String query) {

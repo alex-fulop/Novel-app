@@ -92,7 +92,6 @@ public class SearchFragment extends NovelFragment {
             updateFollowDrawable();
             saveNovelsLocally(novels);
             followHashtag.setVisibility(View.VISIBLE);
-            searchProgressLayout.setVisibility(View.GONE);
         }
     }
 

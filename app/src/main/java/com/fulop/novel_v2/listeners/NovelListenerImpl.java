@@ -112,11 +112,10 @@ public class NovelListenerImpl implements NovelListener {
     }
 
     private void updateFollowedUsers(boolean followed) {
-        if (isNetworkAvailable(novelList.getContext())) {
-            firebaseDB.collection(DATA_USERS)
+        firebaseDB.collection(DATA_USERS)
                     .document(userId)
                     .update(DATA_USER_FOLLOW, user.getFollowUsers());
-        }
+
         novelList.setClickable(true);
         callback.onUserUpdated();
         Toast.makeText(novelList.getContext(), followed ?
